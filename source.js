@@ -198,7 +198,7 @@ function drawGame(){
         //DRAW SKY
         for (let y = 0; y < game.height; y++) {
             for (let x = x0; x < x1; x++) {
-                z_buffer[y].push({rgba:( (y < horizon) ? skyColor : floorColor ), dist:cam.visibility})
+                z_buffer[y].push({rgba:( (y < horizon) ? skyColor : floorColor ), dist:cam.visibility, light:true})
             }
         }
 
@@ -206,14 +206,23 @@ function drawGame(){
         for(let y=0; y<game.height; y++){
             z_buffer[y].sort((a, b) => a.dist - b.dist)
             let combinedPixel = null
+            let dist = 0
+            let light = false
             for(let yx of z_buffer[y]){
-                let pixel = yx.rgba
-                if(pixel[3] == 0) continue
-                if(!combinedPixel) combinedPixel = pixel
-                else combinedPixel = mixRgbAlpha(combinedPixel, pixel)
-                if(pixel[3] == 255) break
+                let r = yx.rgba[0]
+                let g = yx.rgba[1]
+                let b = yx.rgba[2]
+                let a = yx.rgba[3]
+                dist = yx.dist
+                light = yx.light
+                if(yx.alpha) a = yx.alpha
+                if(a == 0) continue
+                if(!combinedPixel) combinedPixel = [r,g,b,a]
+                else combinedPixel = mixRgbAlpha(combinedPixel, [r,g,b,a])
+                if(a == 255) break
             }
             if(combinedPixel){
+                combinedPixel = getShadedPixel(combinedPixel, dist, light)
                 for(let x=x0; x<x1; x++){
                     data[y*game.width+x] = rgbaToPixel(combinedPixel)
                 }
@@ -236,9 +245,9 @@ function drawWall(coll, ray){
     for(let y=y0; y<y1; y++){
         if((y-y0)%game.res==0 || !imagePixel){
             image_y = Math.round(((y-image_y0)*b))
-            imagePixel = getPixel(image_x, image_y, images[coll.sector.texture])
+            imagePixel = getPixel(image_x, image_y, coll.sector.texture)
         }
-        z_buffer[y].push({rgba:imagePixel, dist:coll.dist})
+        z_buffer[y].push({rgba:imagePixel, dist:coll.dist, alpha:coll.sector.alpha})
     }
 }
 
@@ -281,7 +290,7 @@ function drawPlane(plane, plane_z){
             texture_x = Math.round((image_x - plane.coll.sector.points[0][0])*1)
             texture_y = Math.round((image_y - plane.coll.sector.points[0][1])*1)
 
-            imagePixel = getPixel(texture_x, texture_y, images[plane.coll.sector.ceil])
+            imagePixel = getPixel(texture_x, texture_y, plane.coll.sector.ceil)
         }
         z_buffer[y].push({rgba:imagePixel, dist:d})
     }
@@ -375,7 +384,9 @@ function pointInSector(posx, posy, sector) {
     return inside
 }
 
-function getPixel(x, y, texture) {
+function getPixel(x, y, texture_name) {
+    let texture = images[texture_name]
+
     //return [255, 255, 255, 255]
     if(!isFinite(x) || !isFinite(y) || typeof texture == 'undefined') return [255, 0, 0, 0]
     let x_mod = ((x % texture.width) + texture.width) % texture.width;
@@ -398,14 +409,14 @@ function mixRgbAlpha(rgba1, rgba2){
     return [r, g, b, a*255]
 }
 
-function getShadedPixel(rgba, dist, alpha){
+function getShadedPixel(rgba, dist, light){
     let shade_factor = Math.max(0, Math.min(1, 1 - dist / cam.visibility))
-    if(alpha) shade_factor = 1
+    if(light) shade_factor = 1
     let r_shaded = (rgba[0] * shade_factor)
     let g_shaded = (rgba[1] * shade_factor)
     let b_shaded = (rgba[2] * shade_factor)
 
-    return (rgba[3] << 24) | (b_shaded << 16) | (g_shaded << 8) | r_shaded
+    return [r_shaded, g_shaded, b_shaded, rgba[3]]
 }
 
 function rgbaToPixel(rgba){

@@ -66,7 +66,6 @@ level = [
         z0 : 60, z1 : 180,
         texture: 'transparent.png',
         ceil: 'ceiling.png',
-        alpha: true,
     },
 
     {
@@ -90,7 +89,6 @@ level = [
         z0 : 60, z1 : 180,
         texture: 'transparent.png',
         ceil: 'ceiling.png',
-        alpha: true,
     },
 
     {
@@ -99,7 +97,7 @@ level = [
             [500, 200]
         ],
         z0 : 40, z1 : 140,
-        texture: 'brick.png',
+        texture: 'wood.jpg',
         ceil: 'ceiling.png',
         alpha: 100
     },
