@@ -120,7 +120,7 @@ function drawGame(){
     }
 
     for(let ray of rays){
-        z_buffer = new Array(game.height).fill(cam.visibility+10)
+        z_buffer = Array.from({ length: game.height }, () => []);
         ray_cos = ray.cos
         ray_sin = ray.sin
         ray_rot_cos = Math.cos((ray.deg-player.r)*Math.PI/180)
@@ -208,7 +208,18 @@ function drawGame(){
             drawWall(coll, ray, true)
         }
 
-        
+        //COMMIT Z_BUFFER
+        for(let y=0; y<game.height; y++){
+            z_buffer[y].sort((a, b) => a.dist - b.dist)
+            
+            let pp = z_buffer[y][0]
+            if(pp){
+            let ee = getPixel(pp.x, pp.y, images[pp.image])
+            for(let x=x0; x<x1; x++){
+                data[y*game.width+x] = rgbaToPixel(ee)
+            }
+            }
+        }
     }
 }
 
@@ -224,20 +235,10 @@ function drawWall(coll, ray, alpha){
 
     for(let y=y0; y<y1; y++){
         if((y-y0)%game.res==0){
-            imagePixel = getPixel(image_x, Math.round(((y-image_y0)*b)), images[coll.sector.texture])
-            if(alpha){
-                let pixel = data[y*game.width+x0]
-                imagePixel[3] = 100
-                imagePixel = mixRgbAlpha(imagePixel, [pixel & 0xFF, pixel >> 8 & 0xFF, pixel >> 16 & 0xFF, pixel >> 24 & 0xFF])
-            }
-            shadedPixel = getShadedPixel(imagePixel, coll.dist, alpha)
+            image_y = Math.round(((y-image_y0)*b))
+            //imagePixel = getPixel(image_x, image_y, images[coll.sector.texture])
         }
-        if(coll.dist < z_buffer[y] && imagePixel[3]!=0){
-            for(let x=x0; x<x1; x++){
-                data[y*game.width+x] = shadedPixel
-                z_buffer[y] = coll.dist
-            }
-        }
+        z_buffer[y].push({x:image_x, y:image_y, image:coll.sector.texture, dist:coll.dist})
     }
 }
 
@@ -277,22 +278,12 @@ function drawPlane(plane, plane_z, alpha){
             d = plane_y[plane.coll.sector.id][y]/ray_cos
             let image_x = (player.x + ray_rot_cos*d)
             let image_y = (player.y + ray_rot_sin*d)
-            let texture_x = Math.round((image_x - plane.coll.sector.points[0][0])*1)
-            let texture_y = Math.round((image_y - plane.coll.sector.points[0][1])*1)
+            texture_x = Math.round((image_x - plane.coll.sector.points[0][0])*1)
+            texture_y = Math.round((image_y - plane.coll.sector.points[0][1])*1)
 
-            imagePixel = getPixel(texture_x, texture_y, images[plane.coll.sector.ceil])
-            if(alpha){
-                let pixel = data[y*game.width+x0]
-                imagePixel = mixRgbAlpha(imagePixel, [pixel & 0xFF, pixel >> 8 & 0xFF, pixel >> 16 & 0xFF, pixel >> 24 & 0xFF])
-            }
-            shadedPixel = getShadedPixel(imagePixel, plane.coll.dist, alpha)
+            //imagePixel = getPixel(texture_x, texture_y, images[plane.coll.sector.ceil])
         }
-        if(d < z_buffer[y] && imagePixel[3]!=0){
-            for(let x=x0; x<x1; x++){
-                data[y*game.width+x] = shadedPixel
-                z_buffer[y] = d
-            }
-        }
+        z_buffer[y].push({x:texture_x, y:texture_y, image:plane.coll.sector.ceil, dist:d})
     }
 }
 
@@ -415,6 +406,10 @@ function getShadedPixel(rgba, dist, alpha){
     let b_shaded = (rgba[2] * shade_factor)
 
     return (rgba[3] << 24) | (b_shaded << 16) | (g_shaded << 8) | r_shaded
+}
+
+function rgbaToPixel(rgba){
+    return (rgba[3] << 24) | (rgba[2] << 16) | (rgba[1] << 8) | rgba[0]
 }
 
 let fps = 0
