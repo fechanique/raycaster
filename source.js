@@ -101,7 +101,7 @@ function frame(time) {
     logs()
     requestAnimationFrame(frame)
 }
-
+z_buffer = new Array(game.height)
 function drawGame(){
 
     const skyColor = [235, 206, 135, 255]
@@ -113,7 +113,8 @@ function drawGame(){
     }
 
     for(let ray of rays){
-        z_buffer = Array.from({ length: game.height }, () => []);
+        for(let i=0; i<game.height; i++) z_buffer[i] = []
+        
         ray_cos = ray.cos
         ray_sin = ray.sin
         ray_rot_cos = Math.cos((ray.deg-player.r)*Math.PI/180)
@@ -252,26 +253,14 @@ function drawWall(coll, ray){
     }
 }
 
-function generatePlaneY(coll, isTop, z){
-    plane_y[coll.sector.id] = []
-    let y0 = 0
-    let y1 = game.height
-    if(isTop) y0 = game.height/2+player.head
-    else y1 = game.height/2+player.head
-    //if(!printed && isTop) console.log( coll.sector.name , y0, y1 )
-    for(y=y0; y<y1; y++){
-        let plane_height = z-player.h
-        let cons_1 = ((plane_height-player.z)*cam.plane_dist)
-        let d = Math.abs(cons_1/(y-game.height/2-player.head))
-        plane_y[coll.sector.id][y] = (d)
-    }
-}
-
 function drawPlane(plane, plane_z){
     let isTop = true
     let imagePixel = null
     let top_px = ((plane_z-player.h-player.z)/(plane.p1*ray_cos))*cam.plane_dist
     let bot_px = ((plane_z-player.h-player.z)/(plane.p0*ray_cos))*cam.plane_dist
+
+    let plane_height = plane_z-player.h
+    let cons_1 = ((plane_height-player.z)*cam.plane_dist)/ray_cos
 
     if(top_px<bot_px){
         [top_px, bot_px] = [bot_px, top_px]
@@ -280,12 +269,11 @@ function drawPlane(plane, plane_z){
 
     let y0 = Math.round(Math.max(((game.height/2)-(top_px)+player.head), 0))
     let y1 = Math.round(Math.min(((game.height/2)-(bot_px)+player.head), game.height))
-
-    if(!plane_y[plane.coll.sector.id]) generatePlaneY(plane.coll, isTop, plane_z)
     
     for(let y=y0; y<y1; y++){
         if((y)%game.res==0 || !imagePixel){
-            d = plane_y[plane.coll.sector.id][y]/ray_cos
+            d = Math.abs(cons_1/(y-game.height/2-player.head))
+
             let image_x = (player.x + ray_rot_cos*d)
             let image_y = (player.y + ray_rot_sin*d)
             texture_x = Math.round((image_x - plane.coll.sector.points[0][0])*1)
