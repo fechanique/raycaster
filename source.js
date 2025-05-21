@@ -176,6 +176,7 @@ function drawGame(){
         //DRAW WALLS
         ray.coll.sort((a, b) => a.dist - b.dist)
         for(let coll of ray.coll){
+            //if(!coll.isNextColl) 
             drawWall(coll, ray)
         }
 
