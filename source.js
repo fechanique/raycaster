@@ -21,14 +21,12 @@ mapCtx.scale(map.zoom, map.zoom)
 gameCanvas = document.createElement('canvas')
 gameCanvas.id = 'game'
 document.getElementById('content').appendChild(gameCanvas)
-gameCtx = gameCanvas.getContext('2d')
+gameCtx = gameCanvas.getContext('2d', { alpha: false })
 gameCtx.canvas.width = map.width
 gameCtx.canvas.height = map.height
 
 imageData = gameCtx.createImageData(game.width, game.height)
-const buf = new ArrayBuffer(imageData.data.length)
-const buf8 = new Uint8ClampedArray(buf) // For setting imageData.data
-const data = new Uint32Array(buf)       // For 32-bit pixel manipulation (RGBA)
+const data = new Uint32Array(imageData.data.buffer)
 
 elapsedTime = 0
 previousTime = 0
@@ -58,11 +56,11 @@ function frame(time) {
     }
     if(keys['arrowleft']){
         player.r += vel/2*elapsedTime
-        player.r = Math.round(player.r%360)
+        player.r = ~~(player.r%360)
     }
     if(keys['arrowright']){
         player.r -= vel/2*elapsedTime
-        player.r = Math.round(player.r%360)
+        player.r = ~~(player.r%360)
     }
     if(keys['a']){
         delta_x2 = -delta_v*Math.sin(player.r/180*Math.PI)
@@ -95,26 +93,24 @@ function frame(time) {
 
     drawGame()
 
-    imageData.data.set(buf8)
     gameCtx.putImageData(imageData, 0, 0)
 
     logs()
     requestAnimationFrame(frame)
 }
-z_buffer = new Array(game.height)
+
 function drawGame(){
 
-    const skyColor = [235, 206, 135, 255]
-    const floorColor = [110, 110, 110, 255]
-    const horizon = Math.round(game.height / 2 + player.head);
+    skyColor = (255 << 24) | (135 << 16) | (206 << 8) | 235; // LightSkyBlue (ARGB: FF87CEEB -> RGBA in memory: EB, CE, 87, FF)
+    floorColor = (255 << 24) | (110 << 16) | (110 << 8) | 110; // Gray (ARGB: FF6E6E6E -> RGBA in memory: 6E, 6E, 6E, FF)
+    horizon = ~~(game.height / 2 + player.head);
 
     for(let sector of level){
-        sector.inSector = pointInSector(player.x, player.y, sector)
+        sector.inSector = pointInSector(player.x, player.y, sector.points)
     }
 
     for(let ray of rays){
-        for(let i=0; i<game.height; i++) z_buffer[i] = []
-        
+        z_buffer = new Array(game.height).fill(cam.visibility+10)
         ray_cos = ray.cos
         ray_sin = ray.sin
         ray_rot_cos = Math.cos((ray.deg-player.r)*Math.PI/180)
@@ -128,8 +124,6 @@ function drawGame(){
         ray.y0 = player.y
         ray.x1 = Math.round(player.x+cam.visibility*rot_ray_cos)
         ray.y1 = Math.round(player.y-cam.visibility*rot_ray_sin)
-
-        let pixel = (255 << 24) | (255 << 16) | (0 << 8) | 255
 
         //CALCULATE COLLISIONS
         ray.coll = []
@@ -146,13 +140,14 @@ function drawGame(){
                 //Revisar que las esquinas a vecen devuelven 2 colisiones en el mismo punto
                 if(temp_int){
                     let temp_dist = calcDistance(player.x, player.y, temp_int.intersectX, temp_int.intersectY)
-                    let face_dist = calcDistance(sector.points[i][0], sector.points[i][1], temp_int.intersectX, temp_int.intersectY)
-                    //real_dist = Math.sqrt(temp_dist**2 + (player.jump-sector.z0)**2)
-                    ray.coll.push({id:i, dist: temp_dist, int: temp_int, texture: sector.points[i][2], point:sector.points[i], sector: sector, face:face_dist})
+                    if(temp_dist > 0){
+                        let face_dist = calcDistance(sector.points[i][0], sector.points[i][1], temp_int.intersectX, temp_int.intersectY)
+                        //real_dist = Math.sqrt(temp_dist**2 + (player.jump-sector.z0)**2)
+                        ray.coll.push({id:i, dist: temp_dist, sector: sector, face:face_dist})
+                    }
                 }
             }
         }
-
         ray.coll.sort((a, b) => a.dist - b.dist)
 
         //CALCULATE FLOORS
@@ -163,125 +158,142 @@ function drawGame(){
                 coll.isNextColl = true
                 ray.planes.push({p0:0, p1:coll.dist, coll:coll})
             }else{
-                let nextColl = ray.coll.find((e) => e.sector.id == coll.sector.id && e.id != coll.id && e.dist > coll.dist)
+                let nextColl = ray.coll.find((e) => e.sector.id == coll.sector.id && e.dist > coll.dist)
                 if(nextColl){
                     nextColl.isNextColl = true
                     coll.nextColl = nextColl
                     ray.planes.push({p0:coll.dist, p1:nextColl.dist, coll:coll})
-                }else if(pointInSector(ray.x1, ray.y1, coll.sector)){
+                }else if(pointInSector(ray.x1, ray.y1, coll.sector.points)){
                     ray.planes.push({p0:coll.dist, p1:cam.visibility, coll:coll})
                 }
             }
         }
 
         //DRAW WALLS
-        ray.coll.sort((a, b) => a.dist - b.dist)
         for(let coll of ray.coll){
-            //if(!coll.isNextColl) 
-            drawWall(coll, ray)
+            if(!coll.isNextColl) drawWall(coll, ray, false)
         }
 
         //DRAW FLOORS
         ray.planes.sort((a, b) => a.coll.sector.z1 - b.coll.sector.z1)
         plane_y = {}
         for(let plane of ray.planes){
-            //if(player.z+player.h > plane.coll.sector.z1) 
-            drawPlane(plane, plane.coll.sector.z1, ray.i, plane.coll.sector.alpha)
+            if(player.z+player.h > plane.coll.sector.z1) 
+            drawPlane(plane, plane.coll.sector.z1, plane.coll.sector.alpha)
         }
 
         //DRAW CEILS
         ray.planes.sort((a, b) => b.coll.sector.z0 - a.coll.sector.z0)
         plane_y = {}
         for(let plane of ray.planes){
-            //if(player.z+player.h < plane.coll.sector.z0) 
-            drawPlane(plane, plane.coll.sector.z0, ray.i, plane.coll.sector.alpha)
+            if(player.z+player.h < plane.coll.sector.z0) 
+            drawPlane(plane, plane.coll.sector.z0, plane.coll.sector.alpha)
         }
 
-        //DRAW SKY
-        for (let y = 0; y < game.height; y++) {
-            for (let x = x0; x < x1; x++) {
-                z_buffer[y].push({rgba:( (y < horizon) ? skyColor : floorColor ), dist:cam.visibility, light:true})
-            }
-        }
+        drawSky()
+        
+    }
+}
 
-        //COMMIT Z_BUFFER
-        for(let y=0; y<game.height; y++){
-            z_buffer[y].sort((a, b) => a.dist - b.dist)
-            let combinedPixel = null
-            let dist = 0
-            let light = false
-            for(let yx of z_buffer[y]){
-                let r = yx.rgba[0]
-                let g = yx.rgba[1]
-                let b = yx.rgba[2]
-                let a = yx.rgba[3]
-                dist = yx.dist
-                light = yx.light
-                if(yx.alpha) a = yx.alpha
-                if(a == 0) continue
-                if(!combinedPixel) combinedPixel = [r,g,b,a]
-                else combinedPixel = mixRgbAlpha(combinedPixel, [r,g,b,a])
-                if(a == 255) break
-            }
-            if(combinedPixel){
-                combinedPixel = getShadedPixel(combinedPixel, dist, light)
-                for(let x=x0; x<x1; x++){
-                    data[y*game.width+x] = rgbaToPixel(combinedPixel)
-                }
-            }
+function drawSky(){
+    let pixel = null
+    for (let y = 0; y < game.height; y++) {
+        let k = y*game.width
+        if(z_buffer[y] < cam.visibility) continue
+
+        if(y < horizon) pixel = [235, 206, 135, 255]
+        else pixel = [110, 110, 110, 255]
+
+        /*if(z_buffer[y] == 999999){
+            let prevPixel = data[y*game.width+x0]
+            pixel = mixRgbAlpha([prevPixel & 0xFF, prevPixel >> 8 & 0xFF, prevPixel >> 16 & 0xFF, prevPixel >> 24 & 0xFF], pixel)
+        }*/
+        for (let x = x0; x < x1; x++) {
+            data[k+x] = (pixel[3] << 24) | (pixel[2] << 16) | (pixel[1] << 8) | pixel[0]
         }
     }
 }
 
-function drawWall(coll, ray){
-    let imagePixel = null
+function drawWall(coll, ray, isAlpha){
     let top_px = ((coll.sector.z1-player.h-player.z)/(coll.dist*ray.cos))*cam.plane_dist
     let bot_px = ((coll.sector.z0-player.h-player.z)/((coll.dist)*ray.cos))*cam.plane_dist
-    let y0 = Math.round(Math.max(((game.height/2)-(top_px)+player.head), 0))
-    let y1 = Math.round(Math.min(((game.height/2)-(bot_px)+player.head), game.height))
+    let y0 = ~~(Math.max(((game.height/2)-(top_px)+player.head), 0))
+    let y1 = ~~(Math.min(((game.height/2)-(bot_px)+player.head), game.height))
 
     let image_y0 = ((game.height/2)-(top_px)+player.head+0)
-    let image_x = Math.round(coll.face*1+0)
+    let image_x = ~~(coll.face*1+0)
     let b = ((coll.sector.z0-coll.sector.z1)/(top_px-bot_px))*1
 
+    let pixel = null
     for(let y=y0; y<y1; y++){
-        if((y-y0)%game.res==0 || !imagePixel){
-            image_y = Math.round(((y-image_y0)*b))
-            imagePixel = getPixel(image_x, image_y, coll.sector.texture)
+        if(coll.dist > z_buffer[y]) continue
+        if((y-y0)%game.res==0 || !pixel){
+            pixel = getPixel(image_x, ~~(((y-image_y0)*b)), images[coll.sector.texture])
+            if(pixel[3] < 100) continue
+            shadedPixel = getShadedPixel(pixel, coll.dist, false)
         }
-        z_buffer[y].push({rgba:imagePixel, dist:coll.dist, alpha:coll.sector.alpha})
+        if(pixel[3] == 0) continue
+        else z_buffer[y] = coll.dist
+        let k = y*game.width
+        for(let x=x0; x<x1; x++){
+            data[k+x] = shadedPixel
+        }
     }
+    /*for(let y=y0; y<y1; y++){
+        if(coll.dist > z_buffer[y]) continue
+        if((y-y0)%game.res==0 || !pixel){
+            pixel = getPixel(image_x, ~~(((y-image_y0)*b)), images[coll.sector.texture])
+            if(coll.sector.alphaValue) pixel[3] = coll.sector.alphaValue
+            if(pixel[3] == 0) continue
+            if(z_buffer[y] == 999999){
+                let prevPixel = data[y*game.width+x0]
+                pixel = mixRgbAlpha([prevPixel & 0xFF, prevPixel >> 8 & 0xFF, prevPixel >> 16 & 0xFF, prevPixel >> 24 & 0xFF], pixel)
+            }
+            shadedPixel = getShadedPixel(pixel, coll.dist, false)
+        }
+        if(pixel[3] == 0) continue
+        else if(pixel[3] == 255) z_buffer[y] = coll.dist
+        else if(pixel[3] > 0) z_buffer[y] = 999999
+        let k = y*game.width
+        for(let x=x0; x<x1; x++){
+            data[k+x] = shadedPixel
+        }
+    }*/
 }
 
 function drawPlane(plane, plane_z){
-    let isTop = true
-    let imagePixel = null
     let top_px = ((plane_z-player.h-player.z)/(plane.p1*ray_cos))*cam.plane_dist
     let bot_px = ((plane_z-player.h-player.z)/(plane.p0*ray_cos))*cam.plane_dist
 
     let plane_height = plane_z-player.h
     let cons_1 = ((plane_height-player.z)*cam.plane_dist)/ray_cos
 
-    if(top_px<bot_px){
-        [top_px, bot_px] = [bot_px, top_px]
-        isTop = false
-    }
+    if(top_px<bot_px) [top_px, bot_px] = [bot_px, top_px]
 
-    let y0 = Math.round(Math.max(((game.height/2)-(top_px)+player.head), 0))
-    let y1 = Math.round(Math.min(((game.height/2)-(bot_px)+player.head), game.height))
+    let y0 = ~~(Math.max(((game.height/2)-(top_px)+player.head), 0))
+    let y1 = ~~(Math.min(((game.height/2)-(bot_px)+player.head), game.height))
     
+    let pixel = null
     for(let y=y0; y<y1; y++){
-        if((y)%game.res==0 || !imagePixel){
+        if((y)%game.res==0 || !pixel){
             d = Math.abs(cons_1/(y-game.height/2-player.head))
 
             let image_x = (player.x + ray_rot_cos*d)
             let image_y = (player.y + ray_rot_sin*d)
-            texture_x = Math.round((image_x - plane.coll.sector.points[0][0])*1)
-            texture_y = Math.round((image_y - plane.coll.sector.points[0][1])*1)
+            texture_x = ~~((image_x - plane.coll.sector.points[0][0])*1)
+            texture_y = ~~((image_y - plane.coll.sector.points[0][1])*1)
 
-            imagePixel = getPixel(texture_x, texture_y, plane.coll.sector.ceil)
+            pixel = getPixel(texture_x, texture_y, images[plane.coll.sector.ceil])
+            if(pixel[3] == 0) continue
+            shadedPixel = getShadedPixel(pixel, d, false)
         }
-        z_buffer[y].push({rgba:imagePixel, dist:d})
+        if(d > z_buffer[y]) continue
+        if(pixel[3] == 0) continue
+        else if(pixel[3] == 255) z_buffer[y] = d
+        let k = y*game.width
+        for(let x=x0; x<x1; x++){
+            data[k+x] = shadedPixel
+        }
     }
 }
 
@@ -343,8 +355,8 @@ function findIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
 
     // Si t y u están entre 0 y 1, las líneas se intersectan en este segmento
     if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-        const intersectX = Math.round((x1 + t * (x2 - x1))*100)/100
-        const intersectY = Math.round((y1 + t * (y2 - y1))*100)/100
+        const intersectX = ~~((x1 + t * (x2 - x1))*100)/100
+        const intersectY = ~~((y1 + t * (y2 - y1))*100)/100
         return { intersectX, intersectY }
     }
 
@@ -355,15 +367,21 @@ function findIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
 function calcDistance(x1, y1, x2, y2){
     let x = (x2-x1)
     let y = (y2-y1)
-    return Math.round(Math.sqrt(x**2+y**2))
+    return ~~(Math.sqrt(x**2+y**2)*100)/100
 }
 
-function pointInSector(posx, posy, sector) {
+function pointInSector(posx, posy, points) {
     let inside = false;
-    let vertices = sector.points
-    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
-        let [xi, yi] = vertices[i]
-        let [xj, yj] = vertices[j]
+    for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+        let [xi, yi] = points[i]
+        let [xj, yj] = points[j]
+
+        let onEdge = ( 
+            ( (posy - yi) * (xj - xi) === (posx - xi) * (yj - yi) ) &&
+            (posx >= Math.min(xi, xj) && posx <= Math.max(xi, xj)) &&
+            (posy >= Math.min(yi, yj) && posy <= Math.max(yi, yj))
+        );
+        if (onEdge) return true;
 
         let inters = ((yi > posy) != (yj > posy)) && (posx < (xj - xi) * (posy - yi) / (yj - yi) + xi)
         
@@ -373,17 +391,16 @@ function pointInSector(posx, posy, sector) {
     return inside
 }
 
-function getPixel(x, y, texture_name) {
-    let texture = images[texture_name]
-
+function getPixel(x, y, texture) {
     //return [255, 255, 255, 255]
-    if(!isFinite(x) || !isFinite(y) || typeof texture == 'undefined') return [255, 0, 0, 0]
+    if(!isFinite(x) || !isFinite(y) || typeof texture == 'undefined') return [255, 0, 255, 0]
     let x_mod = ((x % texture.width) + texture.width) % texture.width;
     let y_mod = ((y % texture.height) + texture.height) % texture.height;
     // Calcula el índice del píxel en el array de datos
     let index = y_mod * texture.width + x_mod;
+    let data = texture.data[index]
     
-    return texture.data[index] //r//g//b//a
+    return [data[0], data[1], data[2], data[3]]
 }
 
 function mixRgbAlpha(rgba1, rgba2){
@@ -391,9 +408,9 @@ function mixRgbAlpha(rgba1, rgba2){
     let a2 = rgba2[3]/255
 
     let a = a1+a2*(1-a1)
-    let r = Math.round((rgba1[0]*a1+rgba2[0]*a2*(1-a1))/a)
-    let g = Math.round((rgba1[1]*a1+rgba2[1]*a2*(1-a1))/a)
-    let b = Math.round((rgba1[2]*a1+rgba2[2]*a2*(1-a1))/a)
+    let r = ~~((rgba1[0]*a1+rgba2[0]*a2*(1-a1))/a)
+    let g = ~~((rgba1[1]*a1+rgba2[1]*a2*(1-a1))/a)
+    let b = ~~((rgba1[2]*a1+rgba2[2]*a2*(1-a1))/a)
 
     return [r, g, b, a*255]
 }
@@ -405,11 +422,7 @@ function getShadedPixel(rgba, dist, light){
     let g_shaded = (rgba[1] * shade_factor)
     let b_shaded = (rgba[2] * shade_factor)
 
-    return [r_shaded, g_shaded, b_shaded, rgba[3]]
-}
-
-function rgbaToPixel(rgba){
-    return (rgba[3] << 24) | (rgba[2] << 16) | (rgba[1] << 8) | rgba[0]
+    return (rgba[3] << 24) | (b_shaded << 16) | (g_shaded << 8) | r_shaded
 }
 
 let fps = 0
@@ -420,7 +433,7 @@ function fpsMeter() {
         const time = Date.now()
         frames++
         if (time > prevTime + 1000) {
-            fps = Math.round( ( frames * 1000 ) / ( time - prevTime ) )
+            fps = ~~( ( frames * 1000 ) / ( time - prevTime ) )
             prevTime = time
             frames = 0
         }
@@ -433,6 +446,6 @@ function logs(){
     document.getElementById('logs').innerHTML = 
         fps
         + '<br/>' + JSON.stringify(player) 
-        + '<br/>' + JSON.stringify(keys) 
-        + '<br/>' + JSON.stringify(rays[cam.num_rays/2])
+        //+ '<br/>' + JSON.stringify(keys) 
+        //+ '<br/>' + JSON.stringify(rays[cam.num_rays/2])
 }
