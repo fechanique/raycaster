@@ -1,36 +1,41 @@
-game = { width: 640, height: 480, res:2, logs:true, map:true }
-map = { width: 640, height: 480, zoom: 0.5 }
-player = { x: 0, y: 0, z: 0, h: 150, r: -45, head:0, falling:false, flying:false, clip:true, maxH:150}
-keys = {}
-cam = { fps: 30, fov: 30, plane_dist: 500, num_rays: game.width/game.res, visibility: 5000 }
-rays = []
+game = {
+    opt: { width: 640, height: 480, res:2, logs:true, map:true },
+    map : { width: 640, height: 480, zoom: 0.5 },
+    player : { x: 0, y: 0, z: 0, h: 150, r: -45, head:0, falling:false, flying:false, clip:true, maxH:150},
+    cam : { fps: 30, fov: 30, plane_dist: 500, num_rays: 320, visibility: 10000 },
+    keys : {},
+    rays : [],
+    level: level,
+    images: images
+}
+
 index = 0
-for(let i = -cam.fov; i <= cam.fov; i=i+((cam.fov*2/(cam.num_rays)))){
-    rays.push({i: index++, deg:+i.toFixed(2), coll: [], cos:+Math.cos((i)/180*Math.PI).toFixed(4), sin:+Math.sin((i)/180*Math.PI).toFixed(4)})
+for(let i = -game.cam.fov; i <= game.cam.fov; i=i+((game.cam.fov*2/(game.cam.num_rays)))){
+    game.rays.push({i: index++, deg:+i.toFixed(2), coll: [], cos:+Math.cos((i)/180*Math.PI).toFixed(4), sin:+Math.sin((i)/180*Math.PI).toFixed(4)})
 }
 
 mapCanvas = document.createElement('canvas')
 mapCanvas.id = 'map'
-if(game.map) document.getElementById('content').appendChild(mapCanvas)
+if(game.opt.map) document.getElementById('content').appendChild(mapCanvas)
 mapCtx = mapCanvas.getContext('2d')
-mapCtx.canvas.width = map.width
-mapCtx.canvas.height = map.height
-mapCtx.translate((1-map.zoom)*mapCanvas.width/2, (1-map.zoom)*mapCanvas.height/2)
-mapCtx.scale(map.zoom, map.zoom)
+mapCtx.canvas.width = game.map.width
+mapCtx.canvas.height = game.map.height
+mapCtx.translate((1-game.map.zoom)*mapCanvas.width/2, (1-game.map.zoom)*mapCanvas.height/2)
+mapCtx.scale(game.map.zoom, game.map.zoom)
 
 gameCanvas = document.createElement('canvas')
-gameCanvas.id = 'game'
+gameCanvas.id = 'game.opt'
 document.getElementById('content').appendChild(gameCanvas)
 gameCtx = gameCanvas.getContext('2d', { alpha: false })
-gameCtx.canvas.width = map.width
-gameCtx.canvas.height = map.height
+gameCtx.canvas.width = game.opt.width
+gameCtx.canvas.height = game.opt.height
 gameCtx.imageSmoothingEnabled = false
 //gameCanvas.style.height = window.innerHeight + 'px'
 //gameCanvas.style.width = window.innerWidth + 'px'
 
-if(game.logs) document.body.insertAdjacentHTML('beforeend', '<div id="logs"></div>')
+if(game.opt.logs) document.body.insertAdjacentHTML('beforeend', '<div id="logs"></div>')
 
-imageData = gameCtx.createImageData(game.width, game.height)
+imageData = gameCtx.createImageData(game.opt.width, game.opt.height)
 const data = new Uint32Array(imageData.data.buffer)
 
 elapsedTime = 0
@@ -38,7 +43,6 @@ previousTime = 0
 v0 = 0.3
 vel = v0
 function frame(time) {
-    time = time
     elapsedTime = (time - previousTime)
     previousTime = time
     delta_v = vel*elapsedTime
@@ -49,156 +53,159 @@ function frame(time) {
     delta_z = 0
     delta_h = 0
 
-    if(keys['shift']){
+    if(game.keys['shift']){
         vel = v0*2
     }else{
         vel = v0
     }
-    if(keys['arrowup']){
-        delta_x1 = delta_v*Math.cos(player.r/180*Math.PI)
-        delta_y1 = -delta_v*Math.sin(player.r/180*Math.PI)
+    if(game.keys['arrowup']){
+        delta_x1 = delta_v*Math.cos(game.player.r/180*Math.PI)
+        delta_y1 = -delta_v*Math.sin(game.player.r/180*Math.PI)
     }
-    if(keys['arrowdown']){
-        delta_x1 = -delta_v*Math.cos(player.r/180*Math.PI)
-        delta_y1 = delta_v*Math.sin(player.r/180*Math.PI)
+    if(game.keys['arrowdown']){
+        delta_x1 = -delta_v*Math.cos(game.player.r/180*Math.PI)
+        delta_y1 = delta_v*Math.sin(game.player.r/180*Math.PI)
     }
-    if(keys['arrowleft']){
-        player.r += vel/2*elapsedTime
-        player.r = ~~(player.r%360)
+    if(game.keys['arrowleft']){
+        game.player.r += vel/2*elapsedTime
+        game.player.r = ~~(game.player.r%360)
     }
-    if(keys['arrowright']){
-        player.r -= vel/2*elapsedTime
-        player.r = ~~(player.r%360)
+    if(game.keys['arrowright']){
+        game.player.r -= vel/2*elapsedTime
+        game.player.r = ~~(game.player.r%360)
     }
-    if(keys['a']){
-        delta_x2 = -delta_v*Math.sin(player.r/180*Math.PI)
-        delta_y2 = -delta_v*Math.cos(player.r/180*Math.PI)
+    if(game.keys['a']){
+        delta_x2 = -delta_v*Math.sin(game.player.r/180*Math.PI)
+        delta_y2 = -delta_v*Math.cos(game.player.r/180*Math.PI)
     }
-    if(keys['d']){
-        delta_x2 = delta_v*Math.sin(player.r/180*Math.PI)
-        delta_y2 = delta_v*Math.cos(player.r/180*Math.PI)
+    if(game.keys['d']){
+        delta_x2 = delta_v*Math.sin(game.player.r/180*Math.PI)
+        delta_y2 = delta_v*Math.cos(game.player.r/180*Math.PI)
     }
-    if(keys['w']){
+    if(game.keys['w']){
         delta_z = (vel*elapsedTime)
-        player.flying = true
+        game.player.flying = true
     }
-    if(keys['s']){
+    if(game.keys['s']){
         delta_z = -(vel*elapsedTime)
-        player.flying = true
+        game.player.flying = true
     }
-    if(keys['q']){
-        player.head += Math.round(vel*elapsedTime)
+    if(game.keys['q']){
+        game.player.head += Math.round(vel*elapsedTime)
     }
-    if(keys['z']){
-        player.head -= Math.round(vel*elapsedTime)
+    if(game.keys['z']){
+        game.player.head -= Math.round(vel*elapsedTime)
     }
-    if(keys['r']){
-        player.head = 0
-        player.z = 0
-        player.flying = false
+    if(game.keys['r']){
+        game.player.head = 0
+        game.player.z = 0
+        game.player.flying = false
     }
-    if(keys['x'] && !player.toJump){
-        player.toJump = true
-        player.jumpTime = 0
-        player.z0 = player.z
-        player.f = 400
+    if(game.keys['x'] && !game.player.toJump){
+        game.player.toJump = true
+        game.player.jumpTime = 0
+        game.player.z0 = game.player.z
+        game.player.f = 400
     }
-    if(keys['c']){
+    if(game.keys['c']){
         delta_h = -(vel*2*elapsedTime)
     }else{
         delta_h += (vel*2*elapsedTime)
     }
-    if(player.toJump){
-        player.jumpTime += elapsedTime/1000
-        player.z = ~~(player.z0 + player.f*(player.jumpTime) - (0.5 * 980 * player.jumpTime * player.jumpTime))
-        if(player.z < player.floor){
-            player.toJump = false
-            player.flying = false
-            player.toUp = false
-            player.f = 0
-            player.z = player.floor
+    if(game.player.toJump){
+        game.player.jumpTime += elapsedTime/1000
+        game.player.z = ~~(game.player.z0 + game.player.f*(game.player.jumpTime) - (0.5 * 980 * game.player.jumpTime * game.player.jumpTime))
+        if(game.player.z < game.player.floor){
+            game.player.toJump = false
+            game.player.flying = false
+            game.player.toUp = false
+            game.player.f = 0
+            game.player.z = game.player.floor
         }
-        if(player.z+player.h+10 >= player.ceil){
-            player.z0 = player.z
-            player.f = 0
+        if(game.player.z+game.player.h+10 >= game.player.ceil){
+            game.player.z0 = game.player.z
+            game.player.f = 0
         }
     }
-    if(player.falling & !player.toJump && !player.toUp && !player.flying){
-        player.toJump = true
-        player.jumpTime = 0
-        player.z0 = player.z
-        player.f = 0
+    if(game.player.falling & !game.player.toJump && !game.player.toUp && !game.player.flying){
+        game.player.toJump = true
+        game.player.jumpTime = 0
+        game.player.z0 = game.player.z
+        game.player.f = 0
     }
-    if(player.toUp){
-        player.toJump = false
-        console.log('toUp', player.nextFloor)
-        player.z += Math.round(vel*elapsedTime)
+    if(game.player.toUp){
+        game.player.toJump = false
+        console.log('toUp', game.player.nextFloor)
+        game.player.z += Math.round(vel*elapsedTime)
     }
 
-    if(player.h+delta_h > player.maxH) delta_h = 0
-    if(player.h+delta_h < 70) delta_h = 0
+    if(game.player.h+delta_h > game.player.maxH) delta_h = 0
+    if(game.player.h+delta_h < 70) delta_h = 0
 
-    if(player.z+delta_z+player.h+delta_h+10 >= player.ceil){
+    if(game.player.z+delta_z+game.player.h+delta_h+10 >= game.player.ceil){
         delta_z = 0
         delta_h = 0
     }else{
-        player.z += Math.round(delta_z)
-        player.h += Math.round(delta_h)
+        game.player.z += Math.round(delta_z)
+        game.player.h += Math.round(delta_h)
     }
-    if(player.z <= player.floor) player.z = player.floor
+    if(game.player.z <= game.player.floor) game.player.z = game.player.floor
 
     let new_x = Math.round(delta_x1) + Math.round(delta_x2)
     let new_y = Math.round(delta_y1) + Math.round(delta_y2)
 
     // Movimiento propuesto (por teclado, física, etc)
-    let [nx, ny] = moveWithSliding(player.x, player.y, new_x, new_y, level);
+    let [nx, ny] = moveWithSliding(game.player.x, game.player.y, new_x, new_y, game.level);
 
     // Actualiza la posición
-    player.x = ~~nx;
-    player.y = ~~ny;
+    game.player.x = ~~nx;
+    game.player.y = ~~ny;
     
-    if(game.map) drawMap()
+    if(game.opt.map) drawMap()
 
     drawGame()
 
     gameCtx.putImageData(imageData, 0, 0)
 
-    if(game.logs)logs()
+    if(game.opt.logs)logs()
     requestAnimationFrame(frame)
 }
 
 pixel = [0,0,0,0]
+z_buffer = new Array(game.opt.height)
+MATH_PI_180 = Math.PI/180
 function drawGame(){
 
-    for(let sector of level){
-        sector.inSector = pointInSector(player.x, player.y, sector.points)
+    for(let sector of game.level){
+        sector.inSector = pointInSector(game.player.x, game.player.y, sector.points)
     }
-    player.floor = level.filter(e=>e.inSector && e.z1 <= player.z).sort((a, b) => b.z1 - a.z1) [0]?.z1
-    player.nextFloor = level.filter(e=>e.inSector && e.z1 > player.z).sort((a, b) => a.z1 - b.z1) [0]?.z1
-    player.ceil = level.filter(e=>e.inSector && e.z0 >= player.z+player.h).sort((a, b) => a.z0 - b.z0) [0]?.z0
-    player.falling = player.z > player.floor
-    player.toUp = player.nextFloor-player.z <= 40
+    game.player.floor = game.level.filter(e=>e.inSector && e.z1 <= game.player.z).sort((a, b) => b.z1 - a.z1) [0]?.z1
+    game.player.nextFloor = game.level.filter(e=>e.inSector && e.z1 > game.player.z).sort((a, b) => a.z1 - b.z1) [0]?.z1
+    game.player.ceil = game.level.filter(e=>e.inSector && e.z0 >= game.player.z+game.player.h).sort((a, b) => a.z0 - b.z0) [0]?.z0
+    game.player.falling = game.player.z > game.player.floor
+    game.player.toUp = game.player.nextFloor-game.player.z <= 40
 
-    for(let ray of rays){
-        z_buffer = new Array(game.height).fill(cam.visibility+10)
+    for(let ray of game.rays){
+        z_buffer = new Array(game.opt.height)
         ray_cos = ray.cos
         ray_sin = ray.sin
-        ray_rot_cos = Math.cos((ray.deg-player.r)*Math.PI/180)
-        ray_rot_sin = Math.sin((ray.deg-player.r)*Math.PI/180)
-        x0 = Math.round(ray.i*game.res)
-        x1 = Math.round(Math.min(x0+game.res, game.width))
+        ray_rot_cos = Math.cos((ray.deg-game.player.r)*MATH_PI_180)
+        ray_rot_sin = Math.sin((ray.deg-game.player.r)*MATH_PI_180)
+        x0 = Math.round(ray.i*game.opt.res)
+        x1 = Math.round(Math.min(x0+game.opt.res, game.opt.width))
 
-        rot_ray_cos = Math.cos((player.r-ray.deg)*Math.PI/180)
-        rot_ray_sin = Math.sin((player.r-ray.deg)*Math.PI/180)
-        ray.x0 = player.x
-        ray.y0 = player.y
-        ray.x1 = Math.round(player.x+cam.visibility*rot_ray_cos)
-        ray.y1 = Math.round(player.y-cam.visibility*rot_ray_sin)
+        rot_ray_cos = Math.cos((game.player.r-ray.deg)*MATH_PI_180)
+        rot_ray_sin = Math.sin((game.player.r-ray.deg)*MATH_PI_180)
+
+        ray.x0 = game.player.x
+        ray.y0 = game.player.y
+        ray.x1 = Math.round(game.player.x+game.cam.visibility*rot_ray_cos)
+        ray.y1 = Math.round(game.player.y-game.cam.visibility*rot_ray_sin)
 
         //CALCULATE COLLISIONS
         ray.coll = []
-        for(let sectorIndex=0; sectorIndex<level.length ; sectorIndex++){
-            let sector = level[sectorIndex]
+        for(let sectorIndex=0; sectorIndex<game.level.length ; sectorIndex++){
+            let sector = game.level[sectorIndex]
             sector.id = sectorIndex
             if(sector.inSector) ray.coll.push({id:-1, dist: 0, sector: sector, face:0})
             for(let i=0 ; i<sector.points.length ; i++){
@@ -210,9 +217,9 @@ function drawGame(){
                 let temp_int = findIntersection(ray.x0, ray.y0, ray.x1, ray.y1, sx1, sy1, sx2, sy2)
                 //Revisar que las esquinas a vecen devuelven 2 colisiones en el mismo punto
                 if(temp_int){
-                    let temp_dist = (calcDistance(player.x, player.y, temp_int.intersectX, temp_int.intersectY))
+                    let temp_dist = (calcDistance(game.player.x, game.player.y, temp_int.intersectX, temp_int.intersectY))
                     let face_dist = calcDistance(sector.points[i][0], sector.points[i][1], temp_int.intersectX, temp_int.intersectY)
-                    //real_dist = Math.sqrt(temp_dist**2 + (player.jump-sector.z0)**2)
+                    //real_dist = Math.sqrt(temp_dist**2 + (game.player.jump-sector.z0)**2)
                     if(ray.coll.filter(e=>e.dist == temp_dist && e.sector.id == sectorIndex).length == 0){ //evitar caras juntas y esquinas. Esto es eficiente?
                         ray.coll.push({id:sectorIndex+':'+i, dist: temp_dist, sector: sector, face:face_dist})
                     }
@@ -236,7 +243,7 @@ function drawGame(){
                     coll.nextColl = nextColl
                     ray.planes.push({p0:coll.dist, p1:nextColl.dist, coll:coll})
                 }else if(pointInSector(ray.x1, ray.y1, coll.sector.points)){
-                    ray.planes.push({p0:coll.dist, p1:cam.visibility, coll:coll})
+                    ray.planes.push({p0:coll.dist, p1:game.cam.visibility, coll:coll})
                 }
             }
         }
@@ -250,33 +257,33 @@ function drawGame(){
         ray.planes.sort((a, b) => a.coll.sector.z1 - b.coll.sector.z1)
         plane_y = {}
         for(let plane of ray.planes){
-            if(player.z+player.h > plane.coll.sector.z1 && !plane.coll.sector.alpha) drawPlane(plane, plane.coll.sector.z1, false)
+            if(game.player.z+game.player.h > plane.coll.sector.z1 && !plane.coll.sector.alpha) drawPlane(plane, plane.coll.sector.z1, false)
         }
 
         //DRAW CEILS
         ray.planes.sort((a, b) => b.coll.sector.z0 - a.coll.sector.z0)
         plane_y = {}
         for(let plane of ray.planes){
-            if(player.z+player.h < plane.coll.sector.z0 && !plane.coll.sector.alpha) drawPlane(plane, plane.coll.sector.z0, false)
+            if(game.player.z+game.player.h < plane.coll.sector.z0 && !plane.coll.sector.alpha) drawPlane(plane, plane.coll.sector.z0, false)
         }
 
         drawSky()
 
-        //DRAW FLOORS
+        //DRAW FLOORS ALPHA
         ray.planes.sort((a, b) => b.coll.sector.z1 - a.coll.sector.z1)
         plane_y = {}
         for(let plane of ray.planes){
             if(plane.coll.sector.alpha) drawPlane(plane, plane.coll.sector.z1, true)
         }
 
-        //DRAW CEILS
+        //DRAW CEILS ALPHA
         ray.planes.sort((a, b) => a.coll.sector.z0 - b.coll.sector.z0)
         plane_y = {}
         for(let plane of ray.planes){
             if(plane.coll.sector.alpha) drawPlane(plane, plane.coll.sector.z0, true)
         }
 
-        //DRAW WALLS
+        //DRAW WALLS ALPHA
         ray.coll.sort((a, b) => b.dist - a.dist)
         for(let coll of ray.coll){
             if(coll.dist > 0 && coll.sector.alpha) drawWall(coll, ray, true)
@@ -287,25 +294,25 @@ function drawGame(){
 
 
 function drawSky(){
-    let skybox = images['skybox.jpg']
+    let skybox = game.images['skybox.jpg']
     skybox.texture_h = 3
-    let skybox_height = (skybox.height / game.height) / skybox.texture_h
-    let skybox_height2 = ((game.height/2)*(skybox.texture_h-1))
-    let w = (game.width*(360/(cam.fov*2))/skybox.width)
-    let image_x = ((x0/w) - skybox.width*player.r/360)
+    let skybox_height = (skybox.height / game.opt.height) / skybox.texture_h
+    let skybox_height2 = ((game.opt.height/2)*(skybox.texture_h-1))
+    let w = (game.opt.width*(360/(game.cam.fov*2))/skybox.width)
+    let image_x = ((x0/w) - skybox.width*game.player.r/360)
 
     let start = true
-    for (let y = 0; y < game.height; y++) {
-        if(z_buffer[y] < cam.visibility){
+    for (let y = 0; y < game.opt.height; y++) {
+        if(z_buffer[y] < game.cam.visibility){
             start = true
             continue
         }
-        if((y)%game.res==0 || start){
+        if((y)%game.opt.res==0 || start){
             start = false
-            let image_y = ((y + skybox_height2 - player.head)*skybox_height)
+            let image_y = ((y + skybox_height2 - game.player.head)*skybox_height)
             getPixel(~~image_x, ~~image_y, skybox, pixel)
         }
-        let k = y*game.width
+        let k = y*game.opt.width
         for (let x = x0; x < x1; x++) {
             data[k+x] = (255 << 24) | (pixel[2] << 16) | (pixel[1] << 8) | pixel[0]
         }
@@ -313,30 +320,30 @@ function drawSky(){
 }
 
 function drawWall(coll, ray, isAlpha){
-    let top_px = ((coll.sector.z1-player.h-player.z)/(coll.dist*ray.cos))*cam.plane_dist
-    let bot_px = ((coll.sector.z0-player.h-player.z)/((coll.dist)*ray.cos))*cam.plane_dist
-    let y0 = ~~(Math.max(((game.height/2)-(top_px)+player.head), 0))
-    let y1 = ~~(Math.min(((game.height/2)-(bot_px)+player.head), game.height))
+    let top_px = ((coll.sector.z1-game.player.h-game.player.z)/(coll.dist*ray.cos))*game.cam.plane_dist
+    let bot_px = ((coll.sector.z0-game.player.h-game.player.z)/((coll.dist)*ray.cos))*game.cam.plane_dist
+    let y0 = ~~(Math.max(((game.opt.height/2)-(top_px)+game.player.head), 0))
+    let y1 = ~~(Math.min(((game.opt.height/2)-(bot_px)+game.player.head), game.opt.height))
 
-    let image_y0 = ((game.height/2)-(top_px)+player.head+0)
+    let image_y0 = ((game.opt.height/2)-(top_px)+game.player.head+0)
     let image_x = ~~(coll.face*3+40)
     let b = ((coll.sector.z1-coll.sector.z0)/(top_px-bot_px))*3
 
     for(let y=y0; y<y1; y++){
         if(coll.dist > z_buffer[y]) continue
-        if((y-y0)%game.res==0){
-            getPixel(image_x, ~~(((y-image_y0)*b)), images[coll.sector.texture], pixel)
+        if((y-y0)%game.opt.res==0){
+            getPixel(image_x, ~~(((y-image_y0)*b)), game.images[coll.sector.texture], pixel)
             if(coll.sector.alphaValue) pixel[3] = coll.sector.alphaValue
             if(pixel[3] == 0) continue
             if(isAlpha && pixel[3] < 255){
-                let prevPixel = data[y*game.width+x0]
+                let prevPixel = data[y*game.opt.width+x0]
                 mixRgbAlpha(pixel, [prevPixel & 0xFF, prevPixel >> 8 & 0xFF, prevPixel >> 16 & 0xFF, prevPixel >> 24 & 0xFF], pixel)
             }
             shadedPixel = getShadedPixel(pixel, coll.dist, false)
         }
         if(pixel[3] == 0) continue
         else if(pixel[3] == 255) z_buffer[y] = coll.dist
-        let k = y*game.width
+        let k = y*game.opt.width
         for(let x=x0; x<x1; x++){
             data[k+x] = shadedPixel
         }
@@ -344,43 +351,43 @@ function drawWall(coll, ray, isAlpha){
 }
 
 function drawPlane(plane, plane_z, isAlpha){
-    let top_px = ((plane_z-player.h-player.z)/(plane.p1*ray_cos))*cam.plane_dist
-    let bot_px = ((plane_z-player.h-player.z)/(plane.p0*ray_cos))*cam.plane_dist
+    let top_px = ((plane_z-game.player.h-game.player.z)/(plane.p1*ray_cos))*game.cam.plane_dist
+    let bot_px = ((plane_z-game.player.h-game.player.z)/(plane.p0*ray_cos))*game.cam.plane_dist
 
-    let plane_height = plane_z-player.h
-    let cons_1 = ((plane_height-player.z)*cam.plane_dist)/ray_cos
+    let plane_height = plane_z-game.player.h
+    let cons_1 = ((plane_height-game.player.z)*game.cam.plane_dist)/ray_cos
 
     if(top_px<bot_px) [top_px, bot_px] = [bot_px, top_px]
 
-    let y0 = ~~(Math.max(((game.height/2)-(top_px)+player.head), 0))
-    let y1 = ~~(Math.min(((game.height/2)-(bot_px)+player.head), game.height))
+    let y0 = ~~(Math.max(((game.opt.height/2)-(top_px)+game.player.head), 0))
+    let y1 = ~~(Math.min(((game.opt.height/2)-(bot_px)+game.player.head), game.opt.height))
     
     let planeDist = null
     for(let y=y0; y<y1; y++){
-        if((y)%game.res==0 || !planeDist){
+        if((y)%game.opt.res==0 || !planeDist){
             start = false
-            planeDist = Math.abs(cons_1/(y-game.height/2-player.head))
+            planeDist = Math.abs(cons_1/(y-game.opt.height/2-game.player.head))
             if(planeDist > z_buffer[y]){
                 planeDist = null
                 continue
             }
-            let image_x = (player.x + ray_rot_cos*planeDist)
-            let image_y = (player.y + ray_rot_sin*planeDist)
+            let image_x = (game.player.x + ray_rot_cos*planeDist)
+            let image_y = (game.player.y + ray_rot_sin*planeDist)
             let texture_x = ~~((image_x - plane.coll.sector.points[0][0])*1)
             let texture_y = ~~((image_y - plane.coll.sector.points[0][1])*1)
 
-            getPixel(texture_x, texture_y, images[plane.coll.sector.ceil], pixel)
+            getPixel(texture_x, texture_y, game.images[plane.coll.sector.ceil], pixel)
             if(plane.coll.sector.alphaValue) pixel[3] = plane.coll.sector.alphaValue
             if(pixel[3] == 0) continue
             if(isAlpha && pixel[3] < 255){
-                let prevPixel = data[y*game.width+x0]
+                let prevPixel = data[y*game.opt.width+x0]
                 mixRgbAlpha(pixel, [prevPixel & 0xFF, prevPixel >> 8 & 0xFF, prevPixel >> 16 & 0xFF, prevPixel >> 24 & 0xFF], pixel)
             }
             shadedPixel = getShadedPixel(pixel, planeDist, false)
         }
         if(pixel[3] == 0) continue
         else if(pixel[3] == 255) z_buffer[y] = planeDist
-        let k = y*game.width
+        let k = y*game.opt.width
         for(let x=x0; x<x1; x++){
             data[k+x] = shadedPixel
         }
@@ -388,13 +395,13 @@ function drawPlane(plane, plane_z, isAlpha){
 }
 
 function drawMap(){
-    mapCtx.fillStyle = "lightgrey"
-    mapCtx.fillRect((mapCanvas.width/2)-(mapCanvas.width/2)/map.zoom, (mapCanvas.height/2)-(mapCanvas.height/2)/map.zoom, mapCanvas.width/map.zoom, mapCanvas.height/map.zoom)
+    mapCtx.fillStyle = "whitesmoke"
+    mapCtx.fillRect((mapCanvas.width/2)-(mapCanvas.width/2)/game.map.zoom, (mapCanvas.height/2)-(mapCanvas.height/2)/game.map.zoom, mapCanvas.width/game.map.zoom, mapCanvas.height/game.map.zoom)
     mapCtx.restore()
     mapCtx.save()
-    mapCtx.translate(-player.x+mapCanvas.width/2, -player.y+mapCanvas.height/2)
+    mapCtx.translate(-game.player.x+mapCanvas.width/2, -game.player.y+mapCanvas.height/2)
 
-    for(let elem of level){
+    for(let elem of game.level){
         mapCtx.beginPath()
         for(let path of elem.points){
             mapCtx.lineTo(path[0], path[1])
@@ -408,7 +415,7 @@ function drawMap(){
     mapCtx.save()
 
     mapCtx.translate(mapCanvas.width/2, mapCanvas.height/2)
-    mapCtx.rotate(-player.r/180*Math.PI)
+    mapCtx.rotate(-game.player.r/180*Math.PI)
     mapCtx.lineWidth = 3
     mapCtx.beginPath()
     mapCtx.moveTo(0, -10)
@@ -426,14 +433,81 @@ function drawMap(){
 requestAnimationFrame(frame)
 
 document.addEventListener('keydown', (event)=>{
-    keys[event.key.toLowerCase()] = true
-    //console.log('pressed:', event.key.toLowerCase())
+    game.keys[event.key.toLowerCase()] = true
 })
 document.addEventListener('keyup', (event)=>{
-    delete keys[event.key.toLowerCase()]
-    //console.log('released:', event.key.toLowerCase())
+    delete game.keys[event.key.toLowerCase()]
 })
 
+function getPixel(x, y, texture, out) {
+    if(!out) out = [0, 0, 0, 0];
+    if(!isFinite(x) || !isFinite(y) || !texture.data || texture.data.length == 0) {
+        out[0]=255; out[1]=0; out[2]=255; out[3]=0;
+        return out;
+    }
+    let w = texture.width, h = texture.height;
+    let x_mod = ((x % w) + w) % w;
+    let y_mod = ((y % h) + h) % h;
+    let index = (y_mod * w + x_mod) * 4;
+    out[0] = texture.data[index];
+    out[1] = texture.data[index+1];
+    out[2] = texture.data[index+2];
+    out[3] = texture.data[index+3];
+    return out;
+}
+
+function mixRgbAlpha(rgba1, rgba2, out){
+    if(!out) out = [255, 0, 0, 255]
+    let a1 = rgba1[3]/255
+    let a2 = rgba2[3]/255
+
+    let a = a1+a2*(1-a1)
+    out[0] = ~~((rgba1[0]*a1+rgba2[0]*a2*(1-a1))/a)
+    out[1] = ~~((rgba1[1]*a1+rgba2[1]*a2*(1-a1))/a)
+    out[2] = ~~((rgba1[2]*a1+rgba2[2]*a2*(1-a1))/a)
+    out[3] = ~~(a*255)
+
+    return out
+}
+
+function getShadedPixel(rgba, dist, light){
+    let shade_factor = Math.max(0, Math.min(1, 1 - dist / 5000))
+    if(light) shade_factor = 1
+    let r_shaded = (rgba[0] * shade_factor) | 0
+    let g_shaded = (rgba[1] * shade_factor) | 0
+    let b_shaded = (rgba[2] * shade_factor) | 0
+
+    return (rgba[3] << 24) | (b_shaded << 16) | (g_shaded << 8) | r_shaded
+}
+
+let fps = 0
+function fpsMeter() {
+    let prevTime = Date.now()
+    let frames = 0
+    requestAnimationFrame(function loop() {
+        const time = Date.now()
+        frames++
+        if (time > prevTime + 1000) {
+            fps = ~~( ( frames * 1000 ) / ( time - prevTime ) )
+            prevTime = time
+            frames = 0
+        }
+        requestAnimationFrame(loop)
+    })
+}
+fpsMeter()
+
+function logs(){
+    document.getElementById('logs').innerHTML = 
+        fps
+        + '<br/>' + JSON.stringify(game.player) 
+        //+ '<br/>' + JSON.stringify(game.keys) 
+        //+ '<br/>' + JSON.stringify(game.rays[game.cam.num_rays/2])
+}
+
+  ///////////////////
+ // AUX FUNCTIONS //
+///////////////////
 function findIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
     const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
 
@@ -480,74 +554,6 @@ function pointInSector(posx, posy, points) {
 
     return inside
 }
-
-function getPixel(x, y, texture, out) {
-    if(!out) out = [0, 0, 0, 0];
-    if(!isFinite(x) || !isFinite(y) || !texture.data || texture.data.length == 0) {
-        out[0]=255; out[1]=0; out[2]=255; out[3]=0;
-        return out;
-    }
-    let w = texture.width, h = texture.height;
-    let x_mod = ((x % w) + w) % w;
-    let y_mod = ((y % h) + h) % h;
-    let index = (y_mod * w + x_mod) * 4;
-    out[0] = texture.data[index];
-    out[1] = texture.data[index+1];
-    out[2] = texture.data[index+2];
-    out[3] = texture.data[index+3];
-    return out;
-}
-
-function mixRgbAlpha(rgba1, rgba2, out){
-    if(!out) out = [255, 0, 0, 255]
-    let a1 = rgba1[3]/255
-    let a2 = rgba2[3]/255
-
-    let a = a1+a2*(1-a1)
-    out[0]= ~~((rgba1[0]*a1+rgba2[0]*a2*(1-a1))/a)
-    out[1] = ~~((rgba1[1]*a1+rgba2[1]*a2*(1-a1))/a)
-    out[2] = ~~((rgba1[2]*a1+rgba2[2]*a2*(1-a1))/a)
-    out[3] = ~~(a*255)
-
-    return out
-}
-
-function getShadedPixel(rgba, dist, light){
-    let shade_factor = Math.max(0, Math.min(1, 1 - dist / 2500))
-    if(light) shade_factor = 1
-    let r_shaded = (rgba[0] * shade_factor) | 0
-    let g_shaded = (rgba[1] * shade_factor) | 0
-    let b_shaded = (rgba[2] * shade_factor) | 0
-
-    return (rgba[3] << 24) | (b_shaded << 16) | (g_shaded << 8) | r_shaded
-}
-
-let fps = 0
-function fpsMeter() {
-    let prevTime = Date.now()
-    let frames = 0
-    requestAnimationFrame(function loop() {
-        const time = Date.now()
-        frames++
-        if (time > prevTime + 1000) {
-            fps = ~~( ( frames * 1000 ) / ( time - prevTime ) )
-            prevTime = time
-            frames = 0
-        }
-        requestAnimationFrame(loop)
-    })
-}
-fpsMeter()
-
-function logs(){
-    document.getElementById('logs').innerHTML = 
-        fps
-        + '<br/>' + JSON.stringify(player) 
-        //+ '<br/>' + JSON.stringify(keys) 
-        //+ '<br/>' + JSON.stringify(rays[cam.num_rays/2])
-}
-
-
 
 function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
     // Proyecta el punto sobre el segmento y mide la distancia
@@ -603,7 +609,7 @@ function moveWithSliding(px, py, dx, dy, sectors, radius = 10) {
             let [x2, y2] = points[i];
 
             // Checa si hay colisión o cruce con el segmento
-            if (((sector.z0 < player.z+player.h && sector.z1 > player.z+40) ) &&
+            if (((sector.z0 < game.player.z+game.player.h && sector.z1 > game.player.z+40) ) &&
                 pointToSegmentDistance(newX, newY, x1, y1, x2, y2) < radius) {
                 // Calcula vector deslizado
                 let slide = slideAgainstWall(dx, dy, x1, y1, x2, y2);
