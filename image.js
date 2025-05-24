@@ -3,7 +3,9 @@ let images = {
     'ceiling.png':{width:0, height:0, data:[]},
     'transparent.png':{width:0, height:0, data:[]},
     'wood.jpg':{width:0, height:0, data:[]},
-    'skybox.jpg':{width:0, height:0, data:[]}
+    'tree.png':{width:0, height:0, data:[]},
+    'skybox.jpg':{width:0, height:0, data:[]},
+    'glass.jpg':{width:0, height:0, data:[]},
 }
 let patterns = {}
 
