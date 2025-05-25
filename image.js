@@ -6,6 +6,11 @@ let images = {
     'tree.png':{width:0, height:0, data:[]},
     'skybox.jpg':{width:0, height:0, data:[]},
     'glass.jpg':{width:0, height:0, data:[]},
+    'redGlass.jpg':{width:0, height:0, data:[]},
+    'yellowGlass.jpg':{width:0, height:0, data:[]},
+    'blueGlass.jpg':{width:0, height:0, data:[]},
+    'greenGlass.jpg':{width:0, height:0, data:[]},
+    'fence.png':{width:0, height:0, data:[]},
 }
 let patterns = {}
 

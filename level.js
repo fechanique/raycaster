@@ -64,24 +64,84 @@ level = [
             [200, 300]
         ],
         z0 : 60, z1 : 180,
-        texture: 'transparent.png',
+        texture: 'fence.png',
         ceil: 'ceiling.png',
-        alpha: true,
+        alpha: false,
     },
 
     {
-        name : 'glassCube',
+        name : 'glassCube1',
         points : [
             [-200, 400],
             [-100, 400],
             [-100, 500],
             [-200, 500]
         ],
-        z0 : 60, z1 : 180,
+        z0 : 100, z1 : 200,
         texture: 'glass.jpg',
         ceil: 'glass.jpg',
         alpha: true,
-        alphaValue: 100
+        alphaValue: 50
+    },
+
+    {
+        name : 'glassCube2',
+        points : [
+            [-400, 400],
+            [-300, 400],
+            [-300, 500],
+            [-400, 500]
+        ],
+        z0 : 100, z1 : 200,
+        texture: 'redGlass.jpg',
+        ceil: 'redGlass.jpg',
+        alpha: true,
+        alphaValue: 50
+    },
+
+    {
+        name : 'glassCube3',
+        points : [
+            [-600, 400],
+            [-500, 400],
+            [-500, 500],
+            [-600, 500]
+        ],
+        z0 : 100, z1 : 200,
+        texture: 'yellowGlass.jpg',
+        ceil: 'yellowGlass.jpg',
+        alpha: true,
+        alphaValue: 50
+    },
+
+    {
+        name : 'glassCube4',
+        points : [
+            [-600, 600],
+            [-500, 600],
+            [-500, 700],
+            [-600, 700]
+        ],
+        z0 : 100, z1 : 200,
+        texture: 'greenGlass.jpg',
+        ceil: 'greenGlass.jpg',
+        alpha: true,
+        alphaValue: 50
+    },
+
+    {
+        name : 'glassCube5',
+        points : [
+            [-400, 600],
+            [-300, 600],
+            [-300, 700],
+            [-400, 700]
+        ],
+        z0 : 100, z1 : 200,
+        texture: 'blueGlass.jpg',
+        ceil: 'blueGlass.jpg',
+        alpha: true,
+        alphaValue: 50
     },
 
     {
@@ -92,7 +152,7 @@ level = [
             [-100, 700],
             [-200, 700]
         ],
-        z0 : 60, z1 : 180,
+        z0 : 100, z1 : 200,
         texture: 'transparent.png',
         ceil: 'transparent.png',
         alpha: true    },
