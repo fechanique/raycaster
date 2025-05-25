@@ -1,6 +1,6 @@
 game = {
     opt: { width: 640, height: 480, res:2, logs:true, map:true },
-    map : { width: 640, height: 480, zoom: 0.5 },
+    map : { width: 640, height: 480, zoom: 0.2 },
     player : { x: 0, y: 0, z: 0, h: 150, r: -45, head:0, falling:false, flying:false, clip:true, maxH:150},
     cam : { fps: 30, fov: 30, plane_dist: 500, num_rays: 320, visibility: 10000 },
     keys : {},
@@ -220,9 +220,9 @@ function drawGame(){
                     let temp_dist = (calcDistance(game.player.x, game.player.y, temp_int.intersectX, temp_int.intersectY))
                     let face_dist = calcDistance(sector.points[i][0], sector.points[i][1], temp_int.intersectX, temp_int.intersectY)
                     //real_dist = Math.sqrt(temp_dist**2 + (game.player.jump-sector.z0)**2)
-                    if(ray.coll.filter(e=>e.dist == temp_dist && e.sector.id == sectorIndex).length == 0){ //evitar caras juntas y esquinas. Esto es eficiente?
+                    //if(ray.coll.filter(e=>e.dist == temp_dist && e.sector.id == sectorIndex).length == 0){ //evitar caras juntas y esquinas. Esto es eficiente?
                         ray.coll.push({id:sectorIndex+':'+i, dist: temp_dist, sector: sector, face:face_dist})
-                    }
+                    //}
 
                 }
             }
@@ -233,11 +233,8 @@ function drawGame(){
         ray.planes = []
         for(let coll of ray.coll){
             if(coll.isNextColl) continue
-            if(coll.sector.inSector && coll.dist>0){
-                coll.isNextColl = true
-                ray.planes.push({p0:0, p1:coll.dist, coll:coll})
-            }else{
-                let nextColl = ray.coll.find((e) => e.sector.id == coll.sector.id && e.id != coll.id && e.dist >= coll.dist)
+            
+                let nextColl = ray.coll.find((e) => e.sector.id == coll.sector.id && e.id != coll.id && e.dist > coll.dist)
                 if(nextColl){
                     nextColl.isNextColl = true
                     coll.nextColl = nextColl
@@ -245,7 +242,7 @@ function drawGame(){
                 }else if(pointInSector(ray.x1, ray.y1, coll.sector.points)){
                     ray.planes.push({p0:coll.dist, p1:game.cam.visibility, coll:coll})
                 }
-            }
+            
         }
 
         //DRAW WALLS
