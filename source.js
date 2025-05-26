@@ -2,12 +2,14 @@ game = {
     opt: { width: 640, height: 480, res:2, logs:true, map:true },
     map : { width: 640, height: 480, zoom: 0.2 },
     player : { x: 0, y: 0, z: 0, h: 150, r: -45, head:0, falling:false, flying:false, clip:true, maxH:150},
-    cam : { fps: 30, fov: 30, plane_dist: 450, num_rays: 320, visibility: 10000 },
+    cam : { fps: 30, fov: 30, plane_dist: 500, num_rays: null, visibility: 10000 },
     keys : {},
     rays : [],
     level: level,
     images: images
 }
+game.cam.num_rays = game.opt.width/game.opt.res
+game.cam.plane_dist = (game.opt.width / 2) / Math.tan((game.cam.fov*2 * Math.PI / 180) / 2);
 
 savedPlayer = JSON.parse(localStorage.getItem("player"))
 if(savedPlayer) game.player = savedPlayer
@@ -27,7 +29,7 @@ mapCtx.translate((1-game.map.zoom)*mapCanvas.width/2, (1-game.map.zoom)*mapCanva
 mapCtx.scale(game.map.zoom, game.map.zoom)
 
 gameCanvas = document.createElement('canvas')
-gameCanvas.id = 'game.opt'
+gameCanvas.id = 'gameCanvas'
 document.getElementById('content').appendChild(gameCanvas)
 gameCtx = gameCanvas.getContext('2d', { alpha: false })
 gameCtx.canvas.width = game.opt.width
@@ -62,11 +64,11 @@ function frame(time) {
     }else{
         vel = v0
     }
-    if(game.keys['arrowup']){
+    if(game.keys['w']){
         delta_x1 = delta_v*Math.cos(game.player.r/180*Math.PI)
         delta_y1 = -delta_v*Math.sin(game.player.r/180*Math.PI)
     }
-    if(game.keys['arrowdown']){
+    if(game.keys['s']){
         delta_x1 = -delta_v*Math.cos(game.player.r/180*Math.PI)
         delta_y1 = delta_v*Math.sin(game.player.r/180*Math.PI)
     }
@@ -86,18 +88,18 @@ function frame(time) {
         delta_x2 = delta_v*Math.sin(game.player.r/180*Math.PI)
         delta_y2 = delta_v*Math.cos(game.player.r/180*Math.PI)
     }
-    if(game.keys['w']){
+    if(game.keys['q']){
         delta_z = (vel*elapsedTime)
         game.player.flying = true
     }
-    if(game.keys['s']){
+    if(game.keys['z']){
         delta_z = -(vel*elapsedTime)
         game.player.flying = true
     }
-    if(game.keys['q']){
+    if(game.keys['arrowup']){
         game.player.head += Math.round(vel*elapsedTime)
     }
-    if(game.keys['z']){
+    if(game.keys['arrowdown']){
         game.player.head -= Math.round(vel*elapsedTime)
     }
     if(game.keys['r']){
@@ -291,7 +293,6 @@ function drawGame(){
             if(plane.isFloor == false && !plane.isOver && plane.sector.alpha) drawPlane(plane, true)
         }
         //DRAW FLOORS
-        ray.planes.sort((a, b) => b.z - a.z)
         for(let plane of ray.planes){
             if(plane.isFloor == true && plane.isOver && plane.sector.alpha) drawPlane(plane, true)
         }
@@ -301,14 +302,12 @@ function drawGame(){
             if(wall.sector.alpha) drawWall(wall, ray, true)
         }
         //DRAW ALPHA FLOORS
-        ray.planes.sort((a, b) => b.z - a.z)
         for(let plane of ray.planes){
             if(plane.isFloor == true && !plane.isOver && plane.sector.alpha) drawPlane(plane, true)
         }
         //DRAW CEILS
-        ray.planes.sort((a, b) => b.z - a.z)
         for(let plane of ray.planes){
-            if(plane.isFloor == false && plane.z >= game.player.z+game.player.h && plane.sector.alpha) drawPlane(plane, true)
+            if(plane.isFloor == false && plane.isOver && plane.sector.alpha) drawPlane(plane, true)
         }
         
     }
@@ -321,8 +320,8 @@ function drawWall(wall, ray, isAlpha){
     let y1 = ~~(Math.min(((game.opt.height/2)-(bot_px)+game.player.head), game.opt.height))
 
     let image_y0 = ((game.opt.height/2)-(top_px)+game.player.head+0)
-    let image_x = ~~(wall.face*3+40)
-    let b = ((wall.z1-wall.sector.z0)/(top_px-bot_px))*3
+    let image_x = ~~(wall.face*3.6+0)
+    let b = ((wall.z1-wall.sector.z0)/(top_px-bot_px))*4
 
     for(let y=y0; y<y1; y++){
         if(wall.dist > z_buffer[y]) continue
@@ -337,7 +336,7 @@ function drawWall(wall, ray, isAlpha){
             shadedPixel = getShadedPixel(pixel, wall.dist, false)
         }
         if(pixel[3] == 0) continue
-        else if(!isAlpha || pixel[3] == 255) z_buffer[y] = wall.dist
+        if(!isAlpha) z_buffer[y] = wall.dist
         let k = y*game.opt.width
         for(let x=x0; x<x1; x++){
             data[k+x] = shadedPixel
@@ -381,7 +380,7 @@ function drawPlane(plane, isAlpha){
             shadedPixel = getShadedPixel(pixel, planeDist, false)
         }
         if(pixel[3] == 0) continue
-        else if(pixel[3] == 255) z_buffer[y] = planeDist
+        if(!isAlpha) z_buffer[y] = planeDist
         let k = y*game.opt.width
         for(let x=x0; x<x1; x++){
             data[k+x] = shadedPixel
@@ -459,6 +458,15 @@ document.addEventListener('keydown', (event)=>{
 document.addEventListener('keyup', (event)=>{
     delete game.keys[event.key.toLowerCase()]
 })
+
+/*document.getElementById('gameCanvas').addEventListener('click', function() {
+    document.getElementById('gameCanvas').requestPointerLock();
+});
+document.addEventListener('mousemove', function(e) {
+    // e.movementX y e.movementY son los desplazamientos desde el último evento
+    game.player.r -= e.movementX * 0.2;   // Gira izquierda/derecha (yaw)
+    game.player.head -= e.movementY; // Sube/baja la cabeza (pitch)
+});*/
 
 function getPixel(x, y, texture, out) {
     if(!out) out = [0, 0, 0, 0];

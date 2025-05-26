@@ -11,6 +11,7 @@ let images = {
     'blueGlass.jpg':{width:0, height:0, data:[]},
     'greenGlass.jpg':{width:0, height:0, data:[]},
     'fence.png':{width:0, height:0, data:[]},
+    'door.jpg':{width:0, height:0, data:[]},
 }
 let patterns = {}
 

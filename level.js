@@ -92,7 +92,7 @@ level = [
             [-300, 500],
             [-400, 500]
         ],
-        z0 : 100, z1 : 200,
+        z0 : 150, z1 : 250,
         texture: 'redGlass.jpg',
         ceil: 'redGlass.jpg',
         alpha: true,
@@ -107,7 +107,7 @@ level = [
             [-500, 500],
             [-600, 500]
         ],
-        z0 : 100, z1 : 200,
+        z0 : 300, z1 : 400,
         texture: 'yellowGlass.jpg',
         ceil: 'yellowGlass.jpg',
         alpha: true,
@@ -220,7 +220,12 @@ level = [
 
     {
         points : [ [-200, -200], [0, -200], [0, -100], [-100, -100], [-100, 100], [-200, 100] ],
-        z0 : 0, z1 : 170,
+        z0 : 0, z1 : 230,
         texture: 'brick.png', ceil: 'wood.jpg'
+    },
+    {
+        points : [ [-150, -205], [-70, -205], [-70, -200], [-150, -200]],
+        z0 : 0, z1 : 200,
+        texture: 'door.jpg', ceil: 'door.jpg'
     },
 ]
