@@ -46,6 +46,7 @@ function animateElevator(sector, elapsedTime){
 
 function glassHit(sector){
     sector.z1 = sector.z0
+    events.dispatchEvent(new CustomEvent('glass', { detail:{sector} }))
 }
 
 let animation_time = 0
@@ -55,6 +56,10 @@ function animate(sector, elapsedTime){
         if(sector.candle) sector.points[0][8] += 32
         animation_time = 0
     }
+    rotateSectorToAngle(sector, -game.player.r+90)
+}
+
+function sprite(sector, elapsedTime){
     rotateSectorToAngle(sector, -game.player.r+90)
 }
 

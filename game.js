@@ -7,6 +7,8 @@ downKey = 'arrowdown'
 wKey = 'w'
 sKey = 's'
 
+const events = new EventTarget()
+
 let angle2 = Math.PI/2
 function start(){
     for(var sector of game.level){
@@ -117,6 +119,7 @@ function loop(elapsedTime){
                 nextTouch.inTouch = true
                 if(typeof window[nextTouch.action] == 'function'){
                     window[nextTouch.action](nextTouch)
+                    events.dispatchEvent(new CustomEvent('action', { detail:{sector:nextTouch} } ))
                 }
             }
         }
@@ -147,6 +150,7 @@ function loop(elapsedTime){
                     window[nextTouch.hit](nextTouch)
                 }
             }
+            events.dispatchEvent(new CustomEvent('space', { }))
             setTimeout(()=>{
                 game.uiImages[0].despX = 0
             }, 50)
@@ -357,8 +361,7 @@ function loop(elapsedTime){
     game.player.y = Math.round(game.player.y)
 
     if(game.opt.save) localStorage.setItem("player", JSON.stringify(game.player))
-
-
+    events.dispatchEvent(new CustomEvent('player', {} ))
 
     log += JSON.stringify(game.player)+'<br/>'
     log += 'pNormal: '+JSON.stringify(playerDirection)+'<br/>'

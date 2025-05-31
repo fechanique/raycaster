@@ -17,6 +17,7 @@ let images = {
     'grass.jpg':{width:0, height:0, data:[]},
     'elevatorRail.png':{width:0, height:0, data:[]},
     'gun.png':{width:0, height:0, data:[]},
+    'duke.png':{width:0, height:0, data:[]},
 }
 let patterns = {}
 
