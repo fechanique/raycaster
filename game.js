@@ -148,6 +148,7 @@ function loop(elapsedTime){
                 nextTouch.inTouch = true
                 if(typeof window[nextTouch.hit] == 'function'){
                     window[nextTouch.hit](nextTouch)
+                    events.dispatchEvent(new CustomEvent('hit', { detail:{sector:nextTouch} } ))
                 }
             }
             events.dispatchEvent(new CustomEvent('space', { }))
@@ -263,6 +264,7 @@ function loop(elapsedTime){
                 if(wallIntersect.t < tMin){
                     sectorInFrontId = sector.id
                     sector.sectorInFrontDist = wallIntersect.t
+                    sector.sectorInFrontSegment = i
                     tMin = wallIntersect.t
                 }
             }
@@ -280,26 +282,26 @@ function loop(elapsedTime){
     lastSectorInFront = game.level.find(e=>e.inFrontFirst)
     if(lastSectorInFront){
         lastSectorInFront.inFrontFirst = false
-        for(let i=0 ; i<lastSectorInFront.points.length ; i++){
-            lastSectorInFront.points[i][3] = restoreSector.points[i][3]
-            lastSectorInFront.points[i][4] = restoreSector.points[i][4]
-            lastSectorInFront.points[i][5] = restoreSector.points[i][5]
-        }
-        lastSectorInFront.ceil[1] = restoreSector.ceil[1] ; lastSectorInFront.ceil[2] = restoreSector.ceil[2] ; lastSectorInFront.ceil[3] = restoreSector.ceil[3]
-        lastSectorInFront.floor[1] = restoreSector.floor[1] ; lastSectorInFront.floor[2] = restoreSector.floor[2] ; lastSectorInFront.floor[3] = restoreSector.floor[3]
+        //for(let i=0 ; i<lastSectorInFront.points.length ; i++){
+        //    lastSectorInFront.points[i][3] = restoreSector.points[i][3]
+        //    lastSectorInFront.points[i][4] = restoreSector.points[i][4]
+        //    lastSectorInFront.points[i][5] = restoreSector.points[i][5]
+        //}
+        //lastSectorInFront.ceil[1] = restoreSector.ceil[1] ; lastSectorInFront.ceil[2] = restoreSector.ceil[2] ; lastSectorInFront.ceil[3] = restoreSector.ceil[3]
+        //lastSectorInFront.floor[1] = restoreSector.floor[1] ; lastSectorInFront.floor[2] = restoreSector.floor[2] ; lastSectorInFront.floor[3] = restoreSector.floor[3]
     }
     sectorInFront = game.level.find(e=>e.id == sectorInFrontId)
     if(sectorInFront){
-        log += 'd: '+sectorInFront.id+':'+sectorInFront.sectorInFrontDist + '<br/>'
+        log += 'inFrontFirst: '+sectorInFront.id+' name: '+sectorInFront.name+' dist: '+~~(sectorInFront.sectorInFrontDist)+' side: '+sectorInFront.sectorInFrontSegment + '<br/>'
         sectorInFront.inFrontFirst = true
-        restoreSector = JSON.parse(JSON.stringify(sectorInFront))
-        for(let point of sectorInFront.points){
-            point[3] = 0.2
-            point[4] = 0.2
-            point[5] = -0.2
-        }
-        sectorInFront.ceil[1] += 0.5 ; sectorInFront.ceil[2] -= 0.5 ; sectorInFront.ceil[3] -= 0.5
-        sectorInFront.floor[1] += 0.5 ; sectorInFront.floor[2] -= 0.5 ; sectorInFront.floor[3] -= 0.5
+        //restoreSector = JSON.parse(JSON.stringify(sectorInFront))
+        //for(let point of sectorInFront.points){
+        //   point[3] = 0.2
+        //    point[4] = 0.2
+        //    point[5] = -0.2
+        //}
+        //sectorInFront.ceil[1] += 0.5 ; sectorInFront.ceil[2] -= 0.5 ; sectorInFront.ceil[3] -= 0.5
+        //sectorInFront.floor[1] += 0.5 ; sectorInFront.floor[2] -= 0.5 ; sectorInFront.floor[3] -= 0.5
     }
 
     let sectorFloor = game.level.filter(e=>e.inSector && e.z1 <= game.player.z).sort((a, b) => b.z1 - a.z1) [0]

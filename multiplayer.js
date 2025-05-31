@@ -42,11 +42,17 @@ function onMQTT(topic, data){
             let sector = game.level.find(e=>e.playerId == jsonData.data.id)
             if(sector){
                 traslateSectorToCoords(sector, jsonData.data.player.x, jsonData.data.player.y, jsonData.data.player.z)
+                sector.z1 = jsonData.data.player.z+jsonData.data.player.h+jsonData.data.player.top
             }
         }else if(jsonData.action == 'action'){
             let sector = game.level.find(e=>e.id == jsonData.data.id)
             if(sector){
                 window[sector.action](sector)
+            }
+        }else if(jsonData.action == 'hit'){
+            let sector = game.level.find(e=>e.id == jsonData.data.id)
+            if(sector){
+                window[sector.hit](sector)
             }
         }
         else if(jsonData.action == 'log'){
@@ -78,4 +84,8 @@ events.addEventListener('player', (e) => {
 
 events.addEventListener('action', (e) => {
     sendMQTT({action:'action', data:{id:e.detail.sector.id}})
+})
+
+events.addEventListener('hit', (e) => {
+    sendMQTT({action:'hit', data:{id:e.detail.sector.id}})
 })

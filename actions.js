@@ -1,4 +1,7 @@
 function door(sector){
+    if(!sector.isOpen){
+        events.dispatchEvent(new CustomEvent('sound', { detail:{sound:'sounds/unlock.mp3', sector:sector} }))
+    }
     sector.isOpen = !sector.isOpen
     sector.animate = 'animateDoor'
 }
@@ -14,6 +17,7 @@ function animateDoor(sector, elapsedTime){
     }else if(!sector.isOpen){
         rotateSectorToAngle(sector, 0)
         sector.animate = null
+        events.dispatchEvent(new CustomEvent('sound', { detail:{sound:'sounds/door-close.mp3', sector:sector} }))
     }
 }
 
@@ -26,6 +30,7 @@ function activateElevator(sector){
     }else if(sector.state==1){
         sector.state = 2
     }
+    events.dispatchEvent(new CustomEvent('start-loop', { detail:{sound:'sounds/machine2.mp3', sector:sector} }))
 }
 
 function animateElevator(sector, elapsedTime){
@@ -35,11 +40,13 @@ function animateElevator(sector, elapsedTime){
         if(sector.inSector && game.player.z < sector.z1  && game.player.z > sector.z0) game.player.z = sector.z1
     }else if(sector.state == 1){
         traslateSectorToCoords(sector, sector.x, sector.y, maxElevation)
+        events.dispatchEvent(new CustomEvent('stop-loop', { detail:{sector:sector} }))
     }else if(sector.state == 2 && sector.z > minElevation){
         traslateSector(sector, sector.x, sector.y, -factor)
         if(sector.inFloor && !game.player.toJump) game.player.z = sector.z1
     }else if(sector.state == 2){
         traslateSectorToCoords(sector, sector.x, sector.y, minElevation)
+        events.dispatchEvent(new CustomEvent('stop-loop', { detail:{sector:sector} }))
     }
 
 }

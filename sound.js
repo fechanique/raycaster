@@ -21,7 +21,21 @@ class Audio{
         }
     }
 
-    async load(url, x, y, z, dist, loop, ambience, gain){
+    async addSound(sound){
+        if(!sound.playing){
+            sound.source = await audio.load(sound.src, sound.x, sound.y, sound.z, sound.dist, sound.loop, sound.ambience, sound.gain)
+            sound.playing = true
+        }
+    }
+
+    async delSound(sound){
+        if(sound.playing){
+            sound.source.stop()
+            sound.playing = false
+        }
+    }
+
+    async load(url, x, y, z, dist=2000, loop, ambience, gain){
         if(!this.enabled) return
         const audioBuffer = await fetch(url)
             .then(res => res.arrayBuffer())
@@ -39,7 +53,7 @@ class Audio{
             //panner.panningModel = 'HRTF'
             panner.distanceModel = 'linear'
             panner.refDistance = 0
-            panner.maxDistance = 1000
+            panner.maxDistance = dist
             panner.rolloffFactor = 1
             source.panner = panner
             source.connect(gainNode).connect(source.panner).connect(this.audioContext.destination)
@@ -84,9 +98,34 @@ events.addEventListener('space', (e) => {
 
 events.addEventListener('glass', (e) => {
     let sector = e.detail.sector
-    audio.load('sounds/glass-smash.mp3', sector.points[0][0], sector.points[0][1], sector.z0, false, false, 1)
+    audio.load('sounds/glass-smash.mp3', sector.points[0][0], sector.points[0][1], sector.z0, 2000, false, false)
 })
 
 events.addEventListener('player', (e) => {
     audio.setPlayer()
+})
+
+events.addEventListener('sound', (e) => {
+    let sector = e.detail.sector
+    audio.load(e.detail.sound, sector.points[0][0], sector.points[0][1], sector.z0, 2000, false, false)
+})
+
+events.addEventListener('start-loop', (e) => {
+    let sector = e.detail.sector
+    let sound = sounds.find(e=>e.id == sector.id)
+    if(sound){
+        audio.addSound(sound)
+    }else{
+        sound = {id:sector.id, x:sector.points[0][0], y:sector.points[0][1], z:sector.z0, dist:4000, src:e.detail.sound, playing:false, loop:true, gain:0.5}
+        sounds.push(sound)
+        audio.addSound(sound)
+    }
+})
+
+events.addEventListener('stop-loop', (e) => {
+    let sector = e.detail.sector
+    let sound = sounds.find(e=>e.id == sector.id)
+    if(sound){
+        audio.delSound(sound)
+    }
 })
