@@ -1,6 +1,7 @@
 let images = {
     'brick.png':{width:0, height:0, data:[]},
     'ceiling.png':{width:0, height:0, data:[]},
+    'floor.jpg':{width:0, height:0, data:[]},
     'transparent.png':{width:0, height:0, data:[]},
     'wood.jpg':{width:0, height:0, data:[]},
     'tree.png':{width:0, height:0, data:[]},
@@ -12,6 +13,10 @@ let images = {
     'greenGlass.jpg':{width:0, height:0, data:[]},
     'fence.png':{width:0, height:0, data:[]},
     'door.jpg':{width:0, height:0, data:[]},
+    'candle.png':{width:0, height:0, data:[]},
+    'grass.jpg':{width:0, height:0, data:[]},
+    'elevatorRail.png':{width:0, height:0, data:[]},
+    'gun.png':{width:0, height:0, data:[]},
 }
 let patterns = {}
 
