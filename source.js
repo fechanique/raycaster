@@ -2,7 +2,7 @@ game = {
     opt: { width: 740, height: 380, res:2, logs:true, map:false, save:false },
     map : { width: 640, height: 480, zoom: 0.5 },
     player : { x: 0, y: 0, z: 0, h: 150, r: -45, head:0, falling:false, flying:false, clip:false, maxH:150, crossHair:true, rad:40, top:20, bot:60},
-    cam : { fps: 30, fov: 30, plane_dist: 500, num_rays: null, visibility: 10000, globalLight:1, lightDist: 5000 },
+    cam : { fps: 30, fov: 40, plane_dist: 500, num_rays: null, visibility: 10000, globalLight:1, lightDist: 5000 },
     keys : {},
     rays : [],
     level: level,
