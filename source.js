@@ -7,7 +7,8 @@ game = {
     rays : [],
     level: level,
     images: images,
-    uiImages : uiImages
+    uiImages : uiImages,
+    stats: {lives:3, bullets:10, kills:0, deaths:0}
 }
 game.cam.num_rays = game.opt.width/game.opt.res
 game.cam.plane_dist = (game.opt.width / 2) / Math.tan((game.cam.fov*2 * Math.PI / 180) / 2)
@@ -217,7 +218,7 @@ function drawWall(wall, isAlpha){
             start = true
             continue
         }
-        if((y-y0)%game.opt.res==0 || start){
+        if((y)%game.opt.res==0 || start){
             start = false
             getPixel(image_x, ~~(((y-image_y0)*b)+wall.coll.points[9]), game.images[wall.coll.points[2]], pixel)
             if(wall.coll.sector.alphaValue) pixel[3] = wall.coll.sector.alphaValue
@@ -255,7 +256,7 @@ function drawPlane(plane, isAlpha){
     let planeDist = null
     let planeImage = plane.isFloor?plane.coll.sector.floor:plane.coll.sector.ceil
     for(let y=y0; y<y1; y++){
-        if((y-y0)%game.opt.res==0 || !planeDist){ //revisar lo de y-y0 porque genera artefactos
+        if((y)%game.opt.res==0 || !planeDist){ //revisar lo de y-y0 porque genera artefactos
             planeDist = Math.abs(cons_1/(y-game.opt.height/2-game.player.head))
             if(planeDist > z_buffer[y]){
                 planeDist = null
@@ -321,15 +322,19 @@ function drawSky(){
 function drawUI(){
     for(let image of game.uiImages){
         let imageData = game.images[image.src]
-
-        for (let y = 0; y < image.toY; y++) {
-            let k = (y+game.opt.height*image.posY)*game.opt.width
-            for (let x = 0; x < image.toX; x++) {
-                let image_x = (x+image.despX)*image.factorX
+        let initX = image.toX>0? game.opt.width*image.originX : (game.opt.width*image.originX)+image.toX
+        let initY = image.toY>0? game.opt.height*image.originY : (game.opt.height*image.originY)+image.toY
+        
+        for (let x0 = 0; x0 < Math.abs(image.toX); x0+=game.opt.res) {
+            for (let y = 0; y < Math.abs(image.toY); y++) {
+                let k = (y+initY)*game.opt.width
+                let image_x = (x0+image.despX)*image.factorX
                 let image_y = (y+image.despY)*image.factorY
-                getPixel(~~image_x, ~~image_y, imageData, pixel)
-                if(pixel[3] != 0)
-                data[k+x+game.opt.width*image.posX] = (255 << 24) | (pixel[2]*game.cam.globalLight << 16) | (pixel[1]*game.cam.globalLight << 8) | pixel[0]*game.cam.globalLight
+                if(y%game.opt.res==0) getPixel(~~image_x, ~~image_y, imageData, pixel)
+                for(x=0; x<game.opt.res; x++ ){
+                    if(pixel[3] != 0)
+                    data[k+x0+x+initX] = (255 << 24) | (pixel[2]*game.cam.globalLight << 16) | (pixel[1]*game.cam.globalLight << 8) | pixel[0]*game.cam.globalLight
+                }
             }
         }
     }

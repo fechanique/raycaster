@@ -18,6 +18,8 @@ let images = {
     'elevatorRail.png':{width:0, height:0, data:[]},
     'gun.png':{width:0, height:0, data:[]},
     'duke.png':{width:0, height:0, data:[]},
+    'heart.png':{width:0, height:0, data:[]},
+    'bullets.png':{width:0, height:0, data:[]},
 }
 let patterns = {}
 

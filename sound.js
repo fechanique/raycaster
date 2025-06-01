@@ -22,14 +22,12 @@ class Audio{
     }
 
     async addSound(sound){
-        if(!sound.playing){
-            sound.source = await audio.load(sound.src, sound.x, sound.y, sound.z, sound.dist, sound.loop, sound.ambience, sound.gain)
-            sound.playing = true
-        }
+        sound.source = await audio.load(sound.src, sound.x, sound.y, sound.z, sound.dist, sound.loop, sound.ambience, sound.gain)
+        sound.playing = true
     }
 
     async delSound(sound){
-        if(sound.playing){
+        if(sound.source){
             sound.source.stop()
             sound.playing = false
         }
@@ -107,15 +105,19 @@ events.addEventListener('player', (e) => {
 
 events.addEventListener('sound', (e) => {
     let sector = e.detail.sector
-    audio.load(e.detail.sound, sector.points[0][0], sector.points[0][1], sector.z0, 2000, false, false)
+    if(sector){
+        audio.load(e.detail.sound, sector.points[0][0], sector.points[0][1], sector.z0, 2000, false, false)
+    }else{
+        audio.load(e.detail.sound)
+    }
 })
 
 events.addEventListener('start-loop', (e) => {
     let sector = e.detail.sector
     let sound = sounds.find(e=>e.id == sector.id)
-    if(sound){
+    if(sound && !sound.playing){
         audio.addSound(sound)
-    }else{
+    }else if(!sound){
         sound = {id:sector.id, x:sector.points[0][0], y:sector.points[0][1], z:sector.z0, dist:4000, src:e.detail.sound, playing:false, loop:true, gain:0.5}
         sounds.push(sound)
         audio.addSound(sound)

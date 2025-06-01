@@ -35,9 +35,7 @@ function loop(elapsedTime){
     log = ''
     actionTime += elapsedTime
     delta_v = vel*elapsedTime
-    
-
-
+    game.player.walk = false
 
 
     delta_x1 = 0
@@ -46,6 +44,7 @@ function loop(elapsedTime){
     delta_y2 = 0
     delta_z = 0
     delta_h = 0
+    delta_w = 0
 
     isAction = false
     if(game.keys['shift']){
@@ -56,26 +55,32 @@ function loop(elapsedTime){
     if(game.keys[upKey]){
         delta_x1 = delta_v*Math.cos(game.player.r/180*Math.PI)
         delta_y1 = -delta_v*Math.sin(game.player.r/180*Math.PI)
+        game.player.walk = true
     }
     if(game.keys[downKey]){
         delta_x1 = -delta_v*Math.cos(game.player.r/180*Math.PI)
         delta_y1 = delta_v*Math.sin(game.player.r/180*Math.PI)
+        game.player.walk = true
     }
     if(game.keys['arrowleft']){
         game.player.r += vel/4*elapsedTime
         game.player.r = Math.floor(game.player.r%360)
+        game.player.walk = true
     }
     if(game.keys['arrowright']){
         game.player.r -= vel/4*elapsedTime
         game.player.r = Math.ceil(game.player.r%360)
+        game.player.walk = true
     }
     if(game.keys['a']){
         delta_x2 = -delta_v*Math.sin(game.player.r/180*Math.PI)
         delta_y2 = -delta_v*Math.cos(game.player.r/180*Math.PI)
+        game.player.walk = true
     }
     if(game.keys['d']){
         delta_x2 = delta_v*Math.sin(game.player.r/180*Math.PI)
         delta_y2 = delta_v*Math.cos(game.player.r/180*Math.PI)
+        game.player.walk = true
     }
     if(game.keys['q']){
         delta_z = (vel*elapsedTime)
@@ -105,8 +110,10 @@ function loop(elapsedTime){
     }
     if(game.keys['c']){
         delta_h -= (vel*2*elapsedTime)
+        game.player.couch = true
     }else{
         delta_h += (vel*2*elapsedTime)
+        game.player.couch = false
     }
     if(game.keys['e']){
         isAction = true
@@ -142,18 +149,26 @@ function loop(elapsedTime){
         isAction = true
         if(actionTime > waitTime){
             actionTime = 0
-            game.uiImages[0].despX = 580
-            let nextTouch = game.level.find(e=>e.inFrontFirst)
-            if(nextTouch){
-                nextTouch.inTouch = true
-                if(typeof window[nextTouch.hit] == 'function'){
-                    window[nextTouch.hit](nextTouch)
-                    events.dispatchEvent(new CustomEvent('hit', { detail:{sector:nextTouch} } ))
+            if(game.stats.bullets>0){
+                game.stats.bullets--
+                game.uiImages[0].despX = 580
+                let nextTouch = game.level.find(e=>e.inFrontFirst)
+                if(nextTouch){
+                    nextTouch.inTouch = true
+                    if(typeof window[nextTouch.hit] == 'function'){
+                        window[nextTouch.hit](nextTouch)
+                        events.dispatchEvent(new CustomEvent('hit', { detail:{sector:nextTouch} } ))
+                    }
                 }
+                events.dispatchEvent(new CustomEvent('space', { }))
+            }else{
+                events.dispatchEvent(new CustomEvent('sound', { detail:{sound:'sounds/take.mp3' } }))
+                game.uiImages[0].despX = 0
+                game.uiImages[0].despY = 240
             }
-            events.dispatchEvent(new CustomEvent('space', { }))
             setTimeout(()=>{
                 game.uiImages[0].despX = 0
+                game.uiImages[0].despY = 0
             }, 50)
         }
     }
@@ -195,6 +210,7 @@ function loop(elapsedTime){
     }
 
     if(game.player.z+delta_z+game.player.h+delta_h+game.player.top >= game.player.ceil){
+        console.log('ceil hit')
         if(delta_z > 0) delta_z = 0
         if(delta_h > 0) delta_h = 0
     }
@@ -317,6 +333,13 @@ function loop(elapsedTime){
 
     //COLLISION NORMALS
     let collision = collisions.sort((a, b) => a.segmentDist.dist - b.segmentDist.dist)[0]
+    if(collision){
+        let sector = game.level[collision.sector]
+        if(sector && typeof window[sector.touch] == 'function'){
+            window[sector.touch](sector)
+            events.dispatchEvent(new CustomEvent('touch', { detail:{sector:sector} } ))
+        }
+    }
 
     if(collisions.length > 1 && (!collisions[0].segmentDist.border && !collisions[1].segmentDist.border)
         && (collisions[0].normal[0] != collisions[1].normal[0] || collisions[0].normal[1] != collisions[1].normal[1])
@@ -364,6 +387,13 @@ function loop(elapsedTime){
 
     if(game.opt.save) localStorage.setItem("player", JSON.stringify(game.player))
     events.dispatchEvent(new CustomEvent('player', {} ))
+
+    let ran = Math.random()
+    if(ran < 0.001){
+        if(game.level.filter(e=>e.name=='heart').length < 3) spawnHeart()
+        if(game.level.filter(e=>e.name=='bullets').length < 3) spawnBullets()
+    }
+    
 
     log += JSON.stringify(game.player)+'<br/>'
     log += 'pNormal: '+JSON.stringify(playerDirection)+'<br/>'
@@ -413,12 +443,15 @@ function drawHUD(){
 
     gameCtx.font = '24px Arial';         // Tamaño y fuente
     gameCtx.fillStyle = 'white';        // Color del texto
-    gameCtx.textAlign = 'center';        // Alineación horizontal ('left', 'right', 'center')
+    gameCtx.textAlign = 'left';        // Alineación horizontal ('left', 'right', 'center')
     gameCtx.textBaseline = 'middle';     // Alineación vertical ('top', 'middle', 'bottom', etc.)
 
     // Dibuja el texto en (x, y)
-    gameCtx.fillText(fps, 24, 24);
-
+    gameCtx.fillText('fps: '+fps, 10, 24);
+    let index = 0
+    for(var stat in game.stats){
+        gameCtx.fillText(stat+': '+game.stats[stat], 10, 48+(index++*24))
+    }
 }
 
 function intersectRayPlane(rayOrigin, rayDir, zPlane) {

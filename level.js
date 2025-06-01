@@ -25,7 +25,7 @@ level = [
             [500, 1000, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
             [0, 1000, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
         ],
-        z0 : 0, z1 : 600,
+        z0 : 0, z1 : 700,
         ceil: ['ceiling.png', 0, 0, 0, 1, 1, 0, 0], 
         floor: ['floor.jpg', 0, 0, 0, 1, 1, 0, 0],
         x:0, y:0, r:0
@@ -39,7 +39,7 @@ level = [
             [600, 980, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
             [980, 980, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
         ],
-        z0 : 0, z1 : 600,
+        z0 : 0, z1 : 700,
         ceil: ['ceiling.png', 0, 0, 0, 1, 1, 0, 0], 
         floor: ['floor.jpg', 0, 0, 0, 1, 1, 0, 0],
         x:0, y:0, r:0
@@ -171,7 +171,7 @@ level = [
             [1020, 600, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
             [980, 600, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
         ],
-        z0 : 550, z1 : 600,
+        z0 : 550, z1 : 700,
         ceil: ['ceiling.png', 0, 0, 0, 1, 1, 0, 0], 
         floor: ['floor.jpg', 0, 0, 0, 1, 1, 0, 0],
         x:0, y:0, r:0
@@ -223,7 +223,7 @@ level = [
             [600, 1000, 'brick.png', 0, 0, 0, 1, 1, 135, -57],
             [500, 1000, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
         ],
-        z0 : 250, z1 : 400,
+        z0 : 250, z1 : 300,
         ceil: ['ceiling.png', 0, 0, 0, 1, 1, 0, 0], 
         floor: ['floor.jpg', 0, 0, 0, 1, 1, 0, 0],
         x:0, y:0, r:0
@@ -235,7 +235,7 @@ level = [
             [600, 1000, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
             [500, 1000, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
         ],
-        z0 : 550, z1 : 600,
+        z0 : 550, z1 : 700,
         ceil: ['ceiling.png', 0, 0, 0, 1, 1, 0, 0], 
         floor: ['floor.jpg', 0, 0, 0, 1, 1, 0, 0],
         x:0, y:0, r:0
@@ -342,7 +342,7 @@ level = [
             [200, -20, 'elevatorRail.png', 0, 0, 0, 1, 1, 0, 0],
             [180, -20, 'elevatorRail.png', 0, 0, 0, 1, 1, 0, 0],
         ],
-        z0 : 0, z1 : 800,
+        z0 : 0, z1 : 900,
         ceil: ['wood.jpg', 0, 0, 0, 1, 1, 0, 0], 
         floor: ['wood.jpg', 0, 0, 0, 1, 1, 0, 0],
         action: 'activateElevator',
@@ -359,7 +359,7 @@ level = [
         z0 : 0, z1 : 20,
         ceil: ['ceiling.png', 0, 0, 0, 1, 1, 0, 0], 
         floor: ['ceiling.png', 0, 0, 0, 1, 1, 0, 0],
-        animate: 'animateElevator', state:2,
+        animate: null, state:2,
         //action: 'activateElevator',
         x:0, y:0, z:0, r:0
     },
@@ -385,9 +385,37 @@ for(let i=0;i<14;i++){
 uiImages = [
     {
         src:'gun.png',
-        posX: 0.5, posY: 0.65,
+        originX: 0.55, originY: 1,
         factorX:0.5, factorY:0.5,
-        toX:180, toY:180,
+        toX:180, toY:-180,
         despX:0, despY:0,
-    }
+    },
 ]
+
+objHeart = {
+    name:'heart',
+    points : [
+        [1500, 1600, 'heart.png', 0, 0, 0, 5, 5, 0, 0],
+        [1550, 1600, 'heart.png', 0, 0, 0, 1, 1, 0, 0],
+    ],
+    z0 : 20, z1 : 70,
+    ceil: ['ceiling.png', 0, 0, 0, 1, 1, 0, 0], 
+    floor: ['floor.jpg', 0, 0, 0, 1, 1, 0, 0],
+    animate: 'animate',
+    touch: 'heart',
+    x:1525, y:1600, z:0, r:0
+}
+
+objBullets = {
+    name:'bullets',
+    points : [
+        [1500, 1500, 'bullets.png', 0, 0, 0, 4, 4, 20, 0],
+        [1550, 1500, 'bullets.png', 0, 0, 0, 1, 1, 0, 0],
+    ],
+    z0 : 0, z1 : 70,
+    ceil: ['ceiling.png', 0, 0, 0, 1, 1, 0, 0], 
+    floor: ['floor.jpg', 0, 0, 0, 1, 1, 0, 0],
+    animate: 'animate',
+    touch: 'bullets',
+    x:1525, y:1500, z:0, r:0
+}

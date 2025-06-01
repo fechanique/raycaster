@@ -9,19 +9,21 @@ function door(sector){
 function animateDoor(sector, elapsedTime){
     if(sector.isOpen && sector.r > -100){
         rotateSector(sector, -0.5*elapsedTime)
-    }else if(sector.isOpen){
-        rotateSectorToAngle(sector, -100)
-        sector.animate = null
     }else if(!sector.isOpen && sector.r < 0){
         rotateSector(sector, +0.5*elapsedTime)
-    }else if(!sector.isOpen){
+    }
+
+    if(sector.isOpen && sector.r < -100){
+        rotateSectorToAngle(sector, -100)
+        sector.animate = null
+    }else if(!sector.isOpen && sector.r > 0){
         rotateSectorToAngle(sector, 0)
         sector.animate = null
         events.dispatchEvent(new CustomEvent('sound', { detail:{sound:'sounds/door-close.mp3', sector:sector} }))
     }
 }
 
-maxElevation = 600
+maxElevation = 700
 minElevation = 0
 function activateElevator(sector){
     sector = game.level.find(e=>e.name=='elevator')
@@ -30,6 +32,7 @@ function activateElevator(sector){
     }else if(sector.state==1){
         sector.state = 2
     }
+    sector.animate = 'animateElevator'
     events.dispatchEvent(new CustomEvent('start-loop', { detail:{sound:'sounds/machine2.mp3', sector:sector} }))
 }
 
@@ -38,15 +41,21 @@ function animateElevator(sector, elapsedTime){
     if(sector.state == 1 && sector.z < maxElevation){
         traslateSector(sector, sector.x, sector.y, factor)
         if(sector.inSector && game.player.z < sector.z1  && game.player.z > sector.z0) game.player.z = sector.z1
-    }else if(sector.state == 1){
-        traslateSectorToCoords(sector, sector.x, sector.y, maxElevation)
-        events.dispatchEvent(new CustomEvent('stop-loop', { detail:{sector:sector} }))
     }else if(sector.state == 2 && sector.z > minElevation){
         traslateSector(sector, sector.x, sector.y, -factor)
         if(sector.inFloor && !game.player.toJump) game.player.z = sector.z1
-    }else if(sector.state == 2){
-        traslateSectorToCoords(sector, sector.x, sector.y, minElevation)
+    }
+
+    if(sector.state == 1 && sector.z >= maxElevation){
+        traslateSectorToCoords(sector, sector.x, sector.y, maxElevation)
+        if(sector.inFloor && !game.player.toJump) game.player.z = sector.z1
         events.dispatchEvent(new CustomEvent('stop-loop', { detail:{sector:sector} }))
+        sector.animate = null
+    }else if(sector.state == 2 && sector.z <= minElevation){
+        traslateSectorToCoords(sector, sector.x, sector.y, minElevation)
+        if(sector.inFloor && !game.player.toJump) game.player.z = sector.z1
+        events.dispatchEvent(new CustomEvent('stop-loop', { detail:{sector:sector} }))
+        sector.animate = null
     }
 
 }
@@ -90,6 +99,70 @@ function light(sector){
         sector.points[0][3] = 1
         sector.points[0][4] = 1
         sector.points[0][5] = 1
+    }
+}
+
+function heart(sector){
+    game.stats.lives +=1
+    events.dispatchEvent(new CustomEvent('sound', { detail:{sound:'sounds/use.mp3', sector:sector} }))
+    //delete sector from game.level
+    let index = game.level.indexOf(sector)
+    game.level.splice(index, 1)
+}
+function spawnHeart(){
+    spawnObj(objHeart)
+}
+
+function bullets(sector){
+    game.stats.bullets +=10
+    events.dispatchEvent(new CustomEvent('sound', { detail:{sound:'sounds/use.mp3', sector:sector} }))
+    //delete sector from game.level
+    let index = game.level.indexOf(sector)
+    game.level.splice(index, 1)
+}
+function spawnBullets(){
+    spawnObj(objBullets)
+}
+
+const leveLength = 11
+function getSpawnCoords(){
+    let randomSector = game.level[Math.floor(Math.random()*leveLength)]
+    console.log(randomSector.id)
+    let x = Math.floor(Math.random() * (2000 - (-2000) + 1)) + (-2000);
+    let y = Math.floor(Math.random() * (2000 - (-2000) + 1)) + (-2000);
+    let insector = pointInSector(x, y, randomSector.points)
+    while(!insector){
+        x = Math.floor(Math.random() * (2000 - (-2000) + 1)) + (-2000);
+        y =Math.floor(Math.random() * (2000 - (-2000) + 1)) + (-2000);
+        insector = pointInSector(x, y, randomSector.points)
+    }
+
+    return [x, y, randomSector.z1]
+}
+
+function spawnObj(obj){
+    let newObj = JSON.parse(JSON.stringify(obj))
+    let coords = getSpawnCoords()
+    
+    traslateSectorToCoords(newObj, coords[0], coords[1], coords[2])
+
+    level.push(newObj)
+}
+
+function enemyHit(sector){
+    events.dispatchEvent(new CustomEvent('playerHit', { detail:{id:game.player.id, enemyId:sector.playerId} }))
+}
+
+function playerHit(enemyId){
+    game.stats.lives -=1
+    if(game.stats.lives <= 0){
+        game.stats.deaths +=1
+        game.stats.lives = 3
+        let coords = getSpawnCoords()
+        game.player.x = coords[0]
+        game.player.y = coords[1]
+        game.player.z = coords[2]
+        events.dispatchEvent(new CustomEvent('playerDeath', { detail:{id:game.player.id, enemyId:enemyId} }))
     }
 }
 
