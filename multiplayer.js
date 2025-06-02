@@ -4,7 +4,7 @@ function connect(){
     id = Math.random().toString(16).substr(2, 8)
     game.player.id = id
     pref = 'tracer/'+id
-    client = mqtt.connect('ws://mqtt.nodenvy.com', {will: {topic: pref+'/sync', payload: JSON.stringify({action:'disconnect'})}})
+    client = mqtt.connect('wss://mqtt.nodenvy.com', {will: {topic: pref+'/sync', payload: JSON.stringify({action:'disconnect'})}})
     client.on('connect', function(){
         console.log('-- mqtt connected --')
         client.subscribe('tracer/#')
@@ -43,8 +43,8 @@ function onMQTT(topic, data){
             }
         }else if(jsonData.action == 'player'){
             let sector = game.level.find(e=>e.playerId == jsonData.data.id)
-            sector.player = jsonData.data.player
             if(sector){
+                sector.player = jsonData.data.player
                 traslateSectorToCoords(sector, jsonData.data.player.x, jsonData.data.player.y, jsonData.data.player.z)
                 sector.z1 = jsonData.data.player.z+jsonData.data.player.h+jsonData.data.player.top
             }
@@ -58,7 +58,7 @@ function onMQTT(topic, data){
             }
         }else if(jsonData.action == 'hit'){
             let sector = game.level.find(e=>e.id == jsonData.data.id)
-            if(sector && !sector.player){
+            if(sector && !sector.playerId){
                 window[sector.hit](sector)
             }
         }
