@@ -299,7 +299,7 @@ function drawSky(){
     skybox.texture_h = 3
     let skybox_height = (skybox.height / game.opt.height) / skybox.texture_h
     let skybox_height2 = ((game.opt.height/2)*(skybox.texture_h-1))
-    let w = (game.opt.width*(360/(game.cam.fov*2))/skybox.width)
+    let w = (game.opt.width*(360/(game.cam.fov))/skybox.width)
     let image_x = ((x0/w) - skybox.width*game.player.r/360)
 
     let start = true
