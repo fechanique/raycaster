@@ -58,7 +58,7 @@ function onMQTT(topic, data){
             }
         }else if(jsonData.action == 'hit'){
             let sector = game.level.find(e=>e.id == jsonData.data.id)
-            if(sector && !sector.player){
+            if(sector && !sector.playerId){
                 window[sector.hit](sector)
             }
         }
