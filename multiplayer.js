@@ -43,8 +43,8 @@ function onMQTT(topic, data){
             }
         }else if(jsonData.action == 'player'){
             let sector = game.level.find(e=>e.playerId == jsonData.data.id)
-            sector.player = jsonData.data.player
             if(sector){
+                sector.player = jsonData.data.player
                 traslateSectorToCoords(sector, jsonData.data.player.x, jsonData.data.player.y, jsonData.data.player.z)
                 sector.z1 = jsonData.data.player.z+jsonData.data.player.h+jsonData.data.player.top
             }
