@@ -2,7 +2,7 @@ game = {
     opt: { width: 640, height: 480, res:2, logs:true, map:true, save:true },
     map : { width: 640, height: 480, zoom: 0.5 },
     player : { x: 0, y: 0, z: 0, h: 150, r: -45, head:0, falling:false, flying:false, clip:false, maxH:150, crossHair:true, rad:40, top:20, bot:60},
-    cam : { fps: 30, fov: 30, plane_dist: 500, num_rays: null, visibility: 10000, globalLight:1, lightDist: 5000 },
+    cam : { fps: 30, fov: 60, plane_dist: 500, num_rays: null, visibility: 10000, globalLight:1, lightDist: 5000 },
     keys : {},
     rays : [],
     level: level,
@@ -10,8 +10,8 @@ game = {
     uiImages : uiImages,
     stats: {lives:3, bullets:10, kills:0, deaths:0}
 }
-game.cam.num_rays = game.opt.width/game.opt.res
-game.cam.plane_dist = (game.opt.width / 2) / Math.tan((game.cam.fov*2 * Math.PI / 180) / 2)
+game.cam.num_rays = (game.opt.width/game.opt.res)
+game.cam.plane_dist = (game.opt.width / 2) / Math.tan((game.cam.fov * Math.PI / 180) / 2)
 
 savedPlayer = JSON.parse(localStorage.getItem("player"))
 if(savedPlayer) game.player = savedPlayer
@@ -19,13 +19,13 @@ function deletePlayerData(){
     game.opt.save = false
     localStorage.removeItem("player")
 }
-index = 0
-for(let i = -game.cam.fov; i <= game.cam.fov; i=i+((game.cam.fov*2/(game.cam.num_rays)))){
+
+for(let index=0 ; index<game.cam.num_rays ; index++){
+    let deg = index*game.cam.fov/game.cam.num_rays - game.cam.fov/2
     game.rays.push({
-        i: index, deg:+i, coll: [], cos:+Math.cos((i)/180*Math.PI), sin:+Math.sin((i)/180*Math.PI), 
+        i: index, deg:deg, coll: [], cos:+Math.cos((deg)/180*Math.PI), sin:+Math.sin((deg)/180*Math.PI), 
         screenX0: Math.round(index*game.opt.res), screenX1: Math.round(Math.min((index*game.opt.res)+game.opt.res, game.opt.width))
     })
-    index++
 }
 
 mapCanvas = document.createElement('canvas')
@@ -47,6 +47,7 @@ gameCtx.imageSmoothingEnabled = false
 //gameCanvas.style.background = 'black'
 //gameCanvas.style.height = window.innerHeight + 'px'
 //gameCanvas.style.width = window.innerWidth + 'px'
+//setMouse()
 
 if(game.opt.logs) document.body.insertAdjacentHTML('beforeend', '<div id="logs"></div>')
 
@@ -209,7 +210,7 @@ function drawWall(wall, isAlpha){
     let y1 = Math.ceil(Math.min(((game.opt.height/2)-(bot_px)+game.player.head), game.opt.height))
 
     let image_y0 = ((game.opt.height/2)-(top_px)+game.player.head)
-    let image_x = ~~(wall.face*wall.coll.points[6]+wall.coll.points[8])
+    let image_x = (wall.face*wall.coll.points[6]+wall.coll.points[8])
     let b = ((wall.z1-wall.coll.sector.z0)/(top_px-bot_px))*wall.coll.points[7]
 
     let start = true
@@ -220,7 +221,7 @@ function drawWall(wall, isAlpha){
         }
         if((y)%game.opt.res==0 || start){
             start = false
-            getPixel(image_x, ~~(((y-image_y0)*b)+wall.coll.points[9]), game.images[wall.coll.points[2]], pixel)
+            getPixel(Math.round(image_x), Math.round(((y-image_y0)*b)+wall.coll.points[9]), game.images[wall.coll.points[2]], pixel)
             if(wall.coll.sector.alphaValue) pixel[3] = wall.coll.sector.alphaValue
             if(pixel[3] == 0) continue
             getShadedPixel(pixel, wall.dist, [wall.coll.points[3], wall.coll.points[4], wall.coll.points[5]], pixel)
