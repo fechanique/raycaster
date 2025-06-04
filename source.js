@@ -307,7 +307,7 @@ function drawSky(){
 
     let start = true
     for (let y = 0; y < game.opt.height; y++) {
-        if(z_buffer[y] < game.cam.visibility){
+        if(z_buffer[y] < Infinity){
             start = true
             continue
         }
@@ -399,6 +399,7 @@ function getPixel(x, y, texture, out) {
     //if(!out) out = [0, 0, 0, 0];
     if(!isFinite(x) || !isFinite(y) || !texture.data || texture.data.length == 0) {
         out[0]=255; out[1]=0; out[2]=255; out[3]=255;
+        return
     }
     let w = texture.width, h = texture.height;
     let x_mod = ((x % w) + w) % w;
