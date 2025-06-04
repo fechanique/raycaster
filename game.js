@@ -386,14 +386,7 @@ function loop(elapsedTime){
     game.player.y = Math.round(game.player.y)
 
     if(game.opt.save) localStorage.setItem("player", JSON.stringify(game.player))
-    events.dispatchEvent(new CustomEvent('player', {} ))
-
-    let ran = Math.random()
-    if(ran < 0.001){
-        if(game.level.filter(e=>e.name=='heart').length < 3) spawnHeart()
-        if(game.level.filter(e=>e.name=='bullets').length < 3) spawnBullets()
-    }
-    
+    events.dispatchEvent(new CustomEvent('player', {} )) 
 
     log += JSON.stringify(game.player)+'<br/>'
     log += 'pNormal: '+JSON.stringify(playerDirection)+'<br/>'

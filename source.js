@@ -204,14 +204,16 @@ function drawGame(){
 }
 
 function drawWall(wall, isAlpha){
-    let top_px = ((wall.z1-game.player.h-game.player.z)/(wall.dist*ray_cos))*game.cam.plane_dist
-    let bot_px = ((wall.z0-game.player.h-game.player.z)/((wall.dist)*ray_cos))*game.cam.plane_dist
+    let wall_z1 = wall.z1+wall.coll.pos.intersectX
+    let wall_z0 = wall.z0+wall.coll.pos.intersectX
+    let top_px = ((wall_z1-game.player.h-game.player.z)/(wall.dist*ray_cos))*game.cam.plane_dist
+    let bot_px = ((wall_z0-game.player.h-game.player.z)/((wall.dist)*ray_cos))*game.cam.plane_dist
     let y0 = Math.ceil(Math.max(((game.opt.height/2)-(top_px)+game.player.head), 0))
     let y1 = Math.ceil(Math.min(((game.opt.height/2)-(bot_px)+game.player.head), game.opt.height))
 
     let image_y0 = ((game.opt.height/2)-(top_px)+game.player.head)
     let image_x = (wall.face*wall.coll.points[6]+wall.coll.points[8])
-    let b = ((wall.z1-wall.coll.sector.z0)/(top_px-bot_px))*wall.coll.points[7]
+    let b = ((wall_z1-wall_z0)/(top_px-bot_px))*wall.coll.points[7]
 
     let start = true
     for(let y=y0; y<y1; y++){
@@ -239,54 +241,82 @@ function drawWall(wall, isAlpha){
     }
 }
 
-function drawPlane(plane, isAlpha){
-    let top_px = ((plane.z-game.player.h-game.player.z)/(plane.p1*ray_cos))*game.cam.plane_dist
-    let bot_px = ((plane.z-game.player.h-game.player.z)/(plane.p0*ray_cos))*game.cam.plane_dist
+const EPSILON = 1e-5; // Pequeño valor para evitar divisiones por cero
 
-    let plane_height = plane.z-game.player.h
-    let cons_1 = ((plane_height-game.player.z)*game.cam.plane_dist)/ray_cos
+function drawPlane(plane, isAlpha){
+    let rampa_top_z = plane.z+plane.nextColl.pos.intersectX
+    let rampa_top_x = plane.nextColl.pos.intersectX
+    let rampa_top_y = plane.nextColl.pos.intersectY
+    let rampa_bot_z = plane.z+plane.coll.pos.intersectX
+    let rampa_bot_x = plane.coll.pos.intersectX
+    let rampa_bot_y = plane.coll.pos.intersectY
+
+    let top_px = ((rampa_top_z-game.player.h-game.player.z)/(plane.p1*ray_cos))*game.cam.plane_dist
+    let bot_px = ((rampa_bot_z-game.player.h-game.player.z)/(plane.p0*ray_cos))*game.cam.plane_dist
 
     if(plane.isOver) [top_px, bot_px] = [bot_px, top_px]
+    
+    let real_y0 = ((game.opt.height/2)-(top_px)+game.player.head)
+    let real_y1 = ((game.opt.height/2)-(bot_px)+game.player.head)
 
-    let y0 = Math.ceil(Math.max(((game.opt.height/2)-(top_px)+game.player.head), 0))
-    let y1 = Math.ceil(Math.min(((game.opt.height/2)-(bot_px)+game.player.head), game.opt.height))
+    let y0 = Math.ceil(Math.max(real_y0, 0))
+    let y1 = Math.ceil(Math.min(real_y1, game.opt.height))
     
     // Ángulo de rotación del plano (en radianes)
     let rot = -plane.coll.sector.r * MATH_PI_180;
-
-    let planeDist = null
     let planeImage = plane.isFloor?plane.coll.sector.floor:plane.coll.sector.ceil
+
+    // Coordenadas de textura y profundidades para los puntos de inicio y fin del segmento en pantalla
+    let d_bot = plane.p0; // Distancia al punto más cercano (proyectado en bot_px)
+    let d_top = plane.p1; // Distancia al punto más lejano (proyectado en top_px)
+
+    // Calcular coordenadas de textura para el punto cercano (bot)
+    let rel_x_bot = rampa_bot_x - plane.coll.sector.points[0][0];
+    let rel_y_bot = rampa_bot_y - plane.coll.sector.points[0][1];
+    let rot_rel_x_bot = rel_x_bot * Math.cos(rot) - rel_y_bot * Math.sin(rot);
+    let rot_rel_y_bot = rel_x_bot * Math.sin(rot) + rel_y_bot * Math.cos(rot);
+    let u_bot = (rot_rel_x_bot + planeImage[6]) * planeImage[4];
+    let v_bot = (rot_rel_y_bot + planeImage[7]) * planeImage[5];
+
+    // Calcular coordenadas de textura para el punto lejano (top)
+    let rel_x_top = rampa_top_x - plane.coll.sector.points[0][0];
+    let rel_y_top = rampa_top_y - plane.coll.sector.points[0][1];
+    let rot_rel_x_top = rel_x_top * Math.cos(rot) - rel_y_top * Math.sin(rot);
+    let rot_rel_y_top = rel_x_top * Math.sin(rot) + rel_y_top * Math.cos(rot);
+    let u_top = (rot_rel_x_top + planeImage[6]) * planeImage[4];
+    let v_top = (rot_rel_y_top + planeImage[7]) * planeImage[5];
+
+    // Evitar división por cero o valores muy pequeños para las distancias
+    let d_bot_safe = Math.max(EPSILON, d_bot);
+    let d_top_safe = Math.max(EPSILON, d_top);
+
     for(let y=y0; y<y1; y++){
-        if((y)%game.opt.res==0 || !planeDist){ //revisar lo de y-y0 porque genera artefactos
-            planeDist = Math.abs(cons_1/(y-game.opt.height/2-game.player.head))
-            if(planeDist > z_buffer[y]){
-                planeDist = null
-                continue
-            }
-            let image_x = (game.player.x + rot_ray_cos*planeDist)
-            let image_y = (game.player.y - rot_ray_sin*planeDist)
+        let lerp_factor_screen = (real_y1 - real_y0 === 0) ? 0 : (y - real_y0) / (real_y1 - real_y0); // Factor de interpolación lineal en pantalla
 
-            // Coordenadas en el mundo del punto a proyectar
-            let rel_x = image_x - plane.coll.sector.points[0][0];
-            let rel_y = image_y - plane.coll.sector.points[0][1];
-            // Rotar el punto según el ángulo del sector
-            let rot_rel_x = rel_x * Math.cos(rot) - rel_y * Math.sin(rot);
-            let rot_rel_y = rel_x * Math.sin(rot) + rel_y * Math.cos(rot);
-            // Cálculo de textura
-            let texture_x = ~~((rot_rel_x + planeImage[6]) * planeImage[4]);
-            let texture_y = ~~((rot_rel_y + planeImage[7]) * planeImage[5]);
+        // Interpolación con corrección de perspectiva
+        let inv_d_interp = (1 - lerp_factor_screen) * (1 / d_top_safe) + lerp_factor_screen * (1 / d_bot_safe);
+        let current_true_dist = 1 / inv_d_interp;
 
-            getPixel(texture_x, texture_y, game.images[planeImage[0]], pixel)
-            if(plane.coll.sector.alphaValue) pixel[3] = plane.coll.sector.alphaValue
-            if(pixel[3] == 0) continue
-            getShadedPixel(pixel, planeDist, [planeImage[1], planeImage[2], planeImage[3]], pixel)
-            if(isAlpha && pixel[3] < 255){
-                let prevPixel = data[y*game.opt.width+x0]
-                mixRgbAlpha(pixel, [prevPixel & 0xFF, prevPixel >> 8 & 0xFF, prevPixel >> 16 & 0xFF, prevPixel >> 24 & 0xFF], pixel)
-            }
+        if(current_true_dist > z_buffer[y] && !isAlpha){ // Comprobar con z_buffer antes de calcular texturas
+            continue;
+        }
+
+        let u_over_d_interp = (1 - lerp_factor_screen) * (u_top / d_top_safe) + lerp_factor_screen * (u_bot / d_bot_safe);
+        let v_over_d_interp = (1 - lerp_factor_screen) * (v_top / d_top_safe) + lerp_factor_screen * (v_bot / d_bot_safe);
+
+        let texture_x = ~~(u_over_d_interp * current_true_dist);
+        let texture_y = ~~(v_over_d_interp * current_true_dist);
+
+        getPixel(texture_x, texture_y, game.images[planeImage[0]], pixel)
+        if(plane.coll.sector.alphaValue) pixel[3] = plane.coll.sector.alphaValue
+        if(pixel[3] == 0) continue
+        getShadedPixel(pixel, current_true_dist, [planeImage[1], planeImage[2], planeImage[3]], pixel)
+        if(isAlpha && pixel[3] < 255){
+            let prevPixel = data[y*game.opt.width+x0]
+            mixRgbAlpha(pixel, [prevPixel & 0xFF, prevPixel >> 8 & 0xFF, prevPixel >> 16 & 0xFF, prevPixel >> 24 & 0xFF], pixel)
         }
         if(pixel[3] == 0) continue
-        if(!isAlpha) z_buffer[y] = planeDist
+        if(!isAlpha) z_buffer[y] = current_true_dist
         let k = y*game.opt.width
         for(let x=x0; x<x1; x++){
             data[k+x] = rgbaToPixel(pixel)
@@ -294,12 +324,13 @@ function drawPlane(plane, isAlpha){
     }
 }
 
+
 function drawSky(){
     let skybox = game.images['skybox.jpg']
     skybox.texture_h = 3
     let skybox_height = (skybox.height / game.opt.height) / skybox.texture_h
     let skybox_height2 = ((game.opt.height/2)*(skybox.texture_h-1))
-    let w = (game.opt.width*(360/(game.cam.fov*2))/skybox.width)
+    let w = (game.opt.width*(360/(game.cam.fov))/skybox.width)
     let image_x = ((x0/w) - skybox.width*game.player.r/360)
 
     let start = true
