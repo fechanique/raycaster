@@ -84,7 +84,7 @@ function frame(time) {
     requestAnimationFrame(frame)
 }
 
-pixel = [0,0,0,0]
+pixel = new Uint8Array(4)
 z_buffer = new Float32Array(game.opt.height)
 MATH_PI_180 = Math.PI/180
 function drawGame(){
@@ -395,11 +395,10 @@ requestAnimationFrame(frame)
 
 function getPixel(x, y, texture, out) {
     //out[0]=255; out[1]=255; out[2]=255; out[3]=255;
-    //return out
+    //return 
     //if(!out) out = [0, 0, 0, 0];
     if(!isFinite(x) || !isFinite(y) || !texture.data || texture.data.length == 0) {
         out[0]=255; out[1]=0; out[2]=255; out[3]=255;
-        return out;
     }
     let w = texture.width, h = texture.height;
     let x_mod = ((x % w) + w) % w;
@@ -409,7 +408,6 @@ function getPixel(x, y, texture, out) {
     out[1] = texture.data[index+1];
     out[2] = texture.data[index+2];
     out[3] = texture.data[index+3];
-    return out;
 }
 
 function mixRgbAlpha(rgba1, rgba2, out){
@@ -422,8 +420,6 @@ function mixRgbAlpha(rgba1, rgba2, out){
     out[1] = ~~((rgba1[1]*a1+rgba2[1]*a2*(1-a1))/a)
     out[2] = ~~((rgba1[2]*a1+rgba2[2]*a2*(1-a1))/a)
     out[3] = ~~(a*255)
-
-    return out
 }
 
 function getShadedPixel(rgba, dist, light, out){
@@ -433,11 +429,9 @@ function getShadedPixel(rgba, dist, light, out){
     //out[1] = (rgba[1] * Math.max(0, Math.min(1, light[1] + 1 - distLight))) | 0
     //out[2] = (rgba[2] * Math.max(0, Math.min(1, light[2] + 1 - distLight))) | 0
     
-    out[0] = Math.min(255, rgba[0] * Math.max(0, Math.min(200, light[0] + game.cam.globalLight[0] - distLight))) | 0
-    out[1] = Math.min(255, rgba[1] * Math.max(0, Math.min(200, light[1] + game.cam.globalLight[1] - distLight))) | 0
-    out[2] = Math.min(255, rgba[2] * Math.max(0, Math.min(200, light[2] + game.cam.globalLight[2] - distLight))) | 0
-
-    return out
+    out[0] = Math.min(255, rgba[0] * Math.max(0, light[0] + game.cam.globalLight[0] - distLight)) | 0
+    out[1] = Math.min(255, rgba[1] * Math.max(0, light[1] + game.cam.globalLight[1] - distLight)) | 0
+    out[2] = Math.min(255, rgba[2] * Math.max(0, light[2] + game.cam.globalLight[2] - distLight)) | 0
 }
 
 function rgbaToPixel(rgba){
