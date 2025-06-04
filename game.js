@@ -20,9 +20,9 @@ function start(){
             if (diff > Math.PI) diff = 2 * Math.PI - diff;
             let factor = (Math.cos(diff) + 1) / 2; // entre 0 y 1
             sector.points[i].push(factor)
-            sector.points[i][3] += factor-0.5
-            sector.points[i][4] += factor-0.5
-            sector.points[i][5] += factor-0.5
+            sector.points[i][3] += (factor-1)*0.5
+            sector.points[i][4] += (factor-1)*0.5
+            sector.points[i][5] += (factor-1)*0.5
             sector.ceil[1] = 0.2; sector.ceil[2] = 0.2; sector.ceil[3] = 0.2;
             sector.floor[1] = 0.1; sector.floor[2] = 0.1; sector.floor[3] = 0.1;
 

@@ -2,7 +2,7 @@ game = {
     opt: { width: 640, height: 480, res:2, logs:true, map:true, save:true },
     map : { width: 640, height: 480, zoom: 0.5 },
     player : { x: 0, y: 0, z: 0, h: 150, r: -45, head:0, falling:false, flying:false, clip:false, maxH:150, crossHair:true, rad:40, top:20, bot:60},
-    cam : { fps: 30, fov: 60, plane_dist: 500, num_rays: null, visibility: 10000, globalLight:1, lightDist: 5000 },
+    cam : { fps: 30, fov: 60, plane_dist: 500, num_rays: null, visibility: 10000, lightDist: 5000, globalLight: [1, 1, 1] },
     keys : {},
     rays : [],
     level: level,
@@ -85,12 +85,12 @@ function frame(time) {
 }
 
 pixel = [0,0,0,0]
-z_buffer = new Array(game.opt.height)
+z_buffer = new Float32Array(game.opt.height)
 MATH_PI_180 = Math.PI/180
 function drawGame(){
 
     for(let ray of game.rays){
-        z_buffer = new Array(game.opt.height)
+        z_buffer.fill(Infinity)
         ray_cos = ray.cos
         ray_sin = ray.sin
 
@@ -252,10 +252,13 @@ function drawPlane(plane, isAlpha){
     let y1 = Math.ceil(Math.min(((game.opt.height/2)-(bot_px)+game.player.head), game.opt.height))
     
     // Ángulo de rotación del plano (en radianes)
-    let rot = -plane.coll.sector.r * MATH_PI_180;
+    let rot = -plane.coll.sector.r * MATH_PI_180
+    let sin_rot = Math.sin(rot)
+    let cos_rot = Math.cos(rot)
 
     let planeDist = null
     let planeImage = plane.isFloor?plane.coll.sector.floor:plane.coll.sector.ceil
+    let texture = game.images[planeImage[0]]
     for(let y=y0; y<y1; y++){
         if((y)%game.opt.res==0 || !planeDist){ //revisar lo de y-y0 porque genera artefactos
             planeDist = Math.abs(cons_1/(y-game.opt.height/2-game.player.head))
@@ -270,13 +273,13 @@ function drawPlane(plane, isAlpha){
             let rel_x = image_x - plane.coll.sector.points[0][0];
             let rel_y = image_y - plane.coll.sector.points[0][1];
             // Rotar el punto según el ángulo del sector
-            let rot_rel_x = rel_x * Math.cos(rot) - rel_y * Math.sin(rot);
-            let rot_rel_y = rel_x * Math.sin(rot) + rel_y * Math.cos(rot);
+            let rot_rel_x = rel_x * cos_rot - rel_y * sin_rot
+            let rot_rel_y = rel_x * sin_rot + rel_y * cos_rot
             // Cálculo de textura
             let texture_x = ~~((rot_rel_x + planeImage[6]) * planeImage[4]);
             let texture_y = ~~((rot_rel_y + planeImage[7]) * planeImage[5]);
 
-            getPixel(texture_x, texture_y, game.images[planeImage[0]], pixel)
+            getPixel(texture_x, texture_y, texture, pixel)
             if(plane.coll.sector.alphaValue) pixel[3] = plane.coll.sector.alphaValue
             if(pixel[3] == 0) continue
             getShadedPixel(pixel, planeDist, [planeImage[1], planeImage[2], planeImage[3]], pixel)
@@ -312,10 +315,11 @@ function drawSky(){
             start = false
             let image_y = ((y + skybox_height2 - game.player.head/1.5)*skybox_height)
             getPixel(~~image_x, ~~image_y, skybox, pixel)
+            getShadedPixel(pixel, 0, [0, 0, 0], pixel)
         }
         let k = y*game.opt.width
         for (let x = x0; x < x1; x++) {
-            data[k+x] = (255 << 24) | (pixel[2]*game.cam.globalLight << 16) | (pixel[1]*game.cam.globalLight << 8) | pixel[0]*game.cam.globalLight
+            data[k+x] = (255 << 24) | (pixel[2] << 16) | (pixel[1] << 8) | pixel[0]
         }
     }
 }
@@ -331,10 +335,13 @@ function drawUI(){
                 let k = (y+initY)*game.opt.width
                 let image_x = (x0+image.despX)*image.factorX
                 let image_y = (y+image.despY)*image.factorY
-                if(y%game.opt.res==0) getPixel(~~image_x, ~~image_y, imageData, pixel)
+                if(y%game.opt.res==0){
+                    getPixel(~~image_x, ~~image_y, imageData, pixel)
+                    getShadedPixel(pixel, 0, [0, 0, 0], pixel)
+                }
                 for(x=0; x<game.opt.res; x++ ){
                     if(pixel[3] != 0)
-                    data[k+x0+x+initX] = (255 << 24) | (pixel[2]*game.cam.globalLight << 16) | (pixel[1]*game.cam.globalLight << 8) | pixel[0]*game.cam.globalLight
+                    data[k+x0+x+initX] = (255 << 24) | (pixel[2] << 16) | (pixel[1] << 8) | pixel[0]
                 }
             }
         }
@@ -421,14 +428,15 @@ function mixRgbAlpha(rgba1, rgba2, out){
 
 function getShadedPixel(rgba, dist, light, out){
     //if(!out) out = [0, 255, 0, 255]
-    out[0] = (rgba[0] * Math.max(0, Math.min(1, light[0] + game.cam.globalLight - dist / game.cam.lightDist))) | 0
-    out[1] = (rgba[1] * Math.max(0, Math.min(1, light[1] + game.cam.globalLight - dist / game.cam.lightDist))) | 0
-    out[2] = (rgba[2] * Math.max(0, Math.min(1, light[2] + game.cam.globalLight - dist / game.cam.lightDist))) | 0
-    /*if(rgba[3] < 255){
-        r_shaded = (rgba[0] * 0) | 0
-        g_shaded = (rgba[1] * 0) | 0
-        b_shaded = (rgba[2] * 0) | 0
-    }*/
+    let distLight = (dist / game.cam.lightDist)
+    //out[0] = (rgba[0] * Math.max(0, Math.min(1, light[0] + 1 - distLight))) | 0
+    //out[1] = (rgba[1] * Math.max(0, Math.min(1, light[1] + 1 - distLight))) | 0
+    //out[2] = (rgba[2] * Math.max(0, Math.min(1, light[2] + 1 - distLight))) | 0
+    
+    out[0] = Math.min(255, rgba[0] * Math.max(0, Math.min(200, light[0] + game.cam.globalLight[0] - distLight))) | 0
+    out[1] = Math.min(255, rgba[1] * Math.max(0, Math.min(200, light[1] + game.cam.globalLight[1] - distLight))) | 0
+    out[2] = Math.min(255, rgba[2] * Math.max(0, Math.min(200, light[2] + game.cam.globalLight[2] - distLight))) | 0
+
     return out
 }
 

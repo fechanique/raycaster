@@ -13,6 +13,7 @@ level = [
         x:0, y:0, r:370,
     },
     {
+        name:'fachada1',
         points : [
             [0, 0, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
             [1000, 0, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
@@ -31,6 +32,7 @@ level = [
         x:0, y:0, r:0
     },
     {
+        name:'fachada2',
         points : [
             [980, 600, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
             [1000, 600, 'brick.png', 0, 0, 0, 1, 1, 0, 0],
