@@ -85,12 +85,12 @@ function frame(time) {
 }
 
 pixel = [0,0,0,0]
-z_buffer = new Array(game.opt.height)
+z_buffer = new Float32Array(game.opt.height)
 MATH_PI_180 = Math.PI/180
 function drawGame(){
 
     for(let ray of game.rays){
-        z_buffer = new Array(game.opt.height)
+        z_buffer.fill(Infinity)
         ray_cos = ray.cos
         ray_sin = ray.sin
 
@@ -253,6 +253,8 @@ function drawPlane(plane, isAlpha){
     
     // Ángulo de rotación del plano (en radianes)
     let rot = -plane.coll.sector.r * MATH_PI_180;
+    let rot_cos = Math.cos(rot)
+    let rot_sin = Math.sin(rot)
 
     let planeDist = null
     let planeImage = plane.isFloor?plane.coll.sector.floor:plane.coll.sector.ceil
@@ -270,8 +272,8 @@ function drawPlane(plane, isAlpha){
             let rel_x = image_x - plane.coll.sector.points[0][0];
             let rel_y = image_y - plane.coll.sector.points[0][1];
             // Rotar el punto según el ángulo del sector
-            let rot_rel_x = rel_x * Math.cos(rot) - rel_y * Math.sin(rot);
-            let rot_rel_y = rel_x * Math.sin(rot) + rel_y * Math.cos(rot);
+            let rot_rel_x = rel_x * rot_cos - rel_y * rot_sin;
+            let rot_rel_y = rel_x * rot_sin + rel_y * rot_cos;
             // Cálculo de textura
             let texture_x = ~~((rot_rel_x + planeImage[6]) * planeImage[4]);
             let texture_y = ~~((rot_rel_y + planeImage[7]) * planeImage[5]);
@@ -392,7 +394,7 @@ function getPixel(x, y, texture, out) {
     //if(!out) out = [0, 0, 0, 0];
     if(!isFinite(x) || !isFinite(y) || !texture.data || texture.data.length == 0) {
         out[0]=255; out[1]=0; out[2]=255; out[3]=255;
-        return out;
+        return
     }
     let w = texture.width, h = texture.height;
     let x_mod = ((x % w) + w) % w;
@@ -402,7 +404,6 @@ function getPixel(x, y, texture, out) {
     out[1] = texture.data[index+1];
     out[2] = texture.data[index+2];
     out[3] = texture.data[index+3];
-    return out;
 }
 
 function mixRgbAlpha(rgba1, rgba2, out){
@@ -415,8 +416,6 @@ function mixRgbAlpha(rgba1, rgba2, out){
     out[1] = ~~((rgba1[1]*a1+rgba2[1]*a2*(1-a1))/a)
     out[2] = ~~((rgba1[2]*a1+rgba2[2]*a2*(1-a1))/a)
     out[3] = ~~(a*255)
-
-    return out
 }
 
 function getShadedPixel(rgba, dist, light, out){
@@ -429,7 +428,6 @@ function getShadedPixel(rgba, dist, light, out){
         g_shaded = (rgba[1] * 0) | 0
         b_shaded = (rgba[2] * 0) | 0
     }*/
-    return out
 }
 
 function rgbaToPixel(rgba){
