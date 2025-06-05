@@ -110,8 +110,8 @@ function drawGame(){
         for(let sectorIndex=0; sectorIndex<game.level.length ; sectorIndex++){
             let sector = game.level[sectorIndex]
             sector.id = sectorIndex
-            if(pointInSector(ray.x0, ray.y0, sector.points)) ray.coll.push({id:-1, dist: 0, sector: sector, face:0, points:sector.points[0]})
-            if(pointInSector(ray.x1, ray.y1, sector.points)) ray.coll.push({id:-2, dist: game.cam.visibility, sector: sector, face:0, points:sector.points[0]})
+            if(pointInSector(ray.x0, ray.y0, sector.points)) ray.coll.push({id:sectorIndex+':-1', dist: 0, sector: sector, face:0, points:sector.points[0]})
+            if(pointInSector(ray.x1, ray.y1, sector.points)) ray.coll.push({id:sectorIndex+':-2', dist: game.cam.visibility, sector: sector, face:0, points:sector.points[0]})
             for(let i=0 ; i<sector.points.length ; i++){
                 let j = (i+1)%sector.points.length
                 let sx1 = sector.points[i][0]
@@ -136,26 +136,21 @@ function drawGame(){
         //CALCULATE FLOORS
         ray.planes = []
         for(let coll of ray.coll){
-            if(coll.isNextColl) continue
-            let nextColl = ray.coll.find((e) => e.dist > coll.dist && coll.sector.id == e.sector.id)
-            if(nextColl){
-                nextColl.isNextColl = true
+            let nextColls = ray.coll.filter((e) => e.dist >= coll.dist && coll.sector.id == e.sector.id && coll.id != e.id && !e.processed)
+            if(nextColls.length % 2 == 0){
+                coll.isNextColl = true
+            }else{
+                let nextColl = nextColls[0]
                 ray.planes.push({p0:coll.dist, p1:nextColl.dist, z:coll.sector.z1, isOver:coll.sector.z1 > game.player.z+game.player.h, coll:coll, nextColl:nextColl, isFloor:true})
                 ray.planes.push({p0:coll.dist, p1:nextColl.dist, z:coll.sector.z0, isOver:coll.sector.z0 > game.player.z+game.player.h, coll:coll, nextColl:nextColl, isFloor:false})
             }
+            coll.processed = true
         }
 
         //CALCULATE WALLS
         ray.walls = []
         for(let coll of ray.coll){
-            if(coll.isBack) continue
-            let nextColl = ray.coll.find((e) => e.dist >= coll.dist && coll.sector.id == e.sector.id && coll.id != e.id)
-            if(nextColl){
-                coll.nextWall = nextColl.id
-                nextColl.isBack = true
-                if(nextColl.dist > coll.dist) ray.walls.push({z0:nextColl.sector.z0, z1:nextColl.sector.z1, dist:nextColl.dist, face:nextColl.face, coll:nextColl, isFront:false})
-            }
-            if(coll.dist>0) ray.walls.push({z0:coll.sector.z0, z1:coll.sector.z1, dist:coll.dist, face:coll.face, coll:coll, isFront:true})
+            if(coll.dist>0) ray.walls.push({z0:coll.sector.z0, z1:coll.sector.z1, dist:coll.dist, face:coll.face, coll:coll, isFront:!coll.isNextColl})
         }
 
         //DRAW WALLS
