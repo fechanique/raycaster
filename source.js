@@ -125,7 +125,7 @@ function drawGame(){
                     let face_dist = calcDistance(sector.points[i][0], sector.points[i][1], temp_int.intersectX, temp_int.intersectY)
                     //real_dist = Math.sqrt(temp_dist**2 + (game.player.jump-sector.z0)**2)
                     //if(ray.coll.filter(e=>e.dist == temp_dist && e.sector.id == sectorIndex).length == 0){ //evitar caras juntas y esquinas. Esto es eficiente?
-                    ray.coll.push({id:sectorIndex+':'+i, dist: temp_dist, sector: sector, face:face_dist, points:sector.points[i], pos:temp_int})
+                        ray.coll.push({id:sectorIndex+':'+i, dist: temp_dist, sector: sector, face:face_dist, points:sector.points[i], pos:temp_int})
                     //}
 
                 }
@@ -137,7 +137,6 @@ function drawGame(){
         ray.planes = []
         for(let coll of ray.coll){
             let nextColls = ray.coll.filter((e) => e.dist >= coll.dist && coll.sector.id == e.sector.id && coll.id != e.id && !e.processed)
-            //ESTO TODAVIA FALLA EN LAS ESQUINAS PORQUE DETECTA DOS COLISIONES EN EL MISMO PUNTO
             if(nextColls.length % 2 == 0){
                 coll.isNextColl = true
             }else{
@@ -151,7 +150,7 @@ function drawGame(){
         //CALCULATE WALLS
         ray.walls = []
         for(let coll of ray.coll){
-            if(coll.dist>0) ray.walls.push({z0:coll.sector.z0, z1:coll.sector.z1, dist:coll.dist, face:coll.face, coll:coll, isFront:!coll.isNextColl})
+            ray.walls.push({z0:coll.sector.z0, z1:coll.sector.z1, dist:coll.dist, face:coll.face, coll:coll, isFront:!coll.isNextColl})
         }
 
         //DRAW WALLS
@@ -443,23 +442,35 @@ function logs(){
   ///////////////////
  // AUX FUNCTIONS //
 ///////////////////
+const EPS = 1e-12
 function findIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
+
+    // 1.  Denominador del sistema
     const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
 
-    // Asegurarse de que las líneas no son paralelas
-    if (denominator == 0) return null
+    // 2.  Segmentos paralelos o coincidentes
+    if (Math.abs(denominator) < EPS) return null
 
+    // 3.  Parámetros de la intersección
     const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator
+
     const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denominator
 
-    // Si t y u están entre 0 y 1, las líneas se intersectan en este segmento
-    if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-        const intersectX = ~~((x1 + t * (x2 - x1))*100)/100
-        const intersectY = ~~((y1 + t * (y2 - y1))*100)/100
+    /* 4.  Intervalos que aceptamos
+           ─────────────────────────
+           · Segmento 1 (rayo)  : [0, 1]  — incluye el extremo inicial
+           · Segmento 2 (arista): (0, 1]  — excluye el extremo u≈0
+             Así, si el rayo pasa por un vértice,
+             una arista dará u≈0 (se descarta) y la otra u≈1 (se cuenta).
+    */
+    if (t >= -EPS && t <= 1 + EPS &&   // cerrado en ambos extremos
+        u >  EPS && u <= 1 + EPS) {    // **abierto** en 0, cerrado en 1
+        const intersectX = ~~((x1 + t * (x2 - x1)) * 100) / 100
+        const intersectY = ~~((y1 + t * (y2 - y1)) * 100) / 100
         return { intersectX, intersectY }
     }
 
-    // Si t o u no están en el rango de 0 a 1, entonces no hay una intersección en los segmentos de línea dados
+    // 5.  Fuera de los tramos
     return null
 }
 
