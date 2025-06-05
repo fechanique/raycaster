@@ -125,7 +125,7 @@ function drawGame(){
                     let face_dist = calcDistance(sector.points[i][0], sector.points[i][1], temp_int.intersectX, temp_int.intersectY)
                     //real_dist = Math.sqrt(temp_dist**2 + (game.player.jump-sector.z0)**2)
                     //if(ray.coll.filter(e=>e.dist == temp_dist && e.sector.id == sectorIndex).length == 0){ //evitar caras juntas y esquinas. Esto es eficiente?
-                        ray.coll.push({id:sectorIndex+':'+i, dist: temp_dist, sector: sector, face:face_dist, points:sector.points[i], pos:temp_int})
+                    ray.coll.push({id:sectorIndex+':'+i, dist: temp_dist, sector: sector, face:face_dist, points:sector.points[i], pos:temp_int})
                     //}
 
                 }
@@ -137,6 +137,7 @@ function drawGame(){
         ray.planes = []
         for(let coll of ray.coll){
             let nextColls = ray.coll.filter((e) => e.dist >= coll.dist && coll.sector.id == e.sector.id && coll.id != e.id && !e.processed)
+            //ESTO TODAVIA FALLA EN LAS ESQUINAS PORQUE DETECTA DOS COLISIONES EN EL MISMO PUNTO
             if(nextColls.length % 2 == 0){
                 coll.isNextColl = true
             }else{
