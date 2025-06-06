@@ -308,7 +308,7 @@ function drawSky(){
         }
         if((y)%game.opt.res==0 || start){
             start = false
-            let image_y = ((y + skybox_height2 - game.player.head/1.5)*skybox_height)
+            let image_y = ((y + skybox_height2 - game.player.head/1.2)*skybox_height)
             getPixel(~~image_x, ~~image_y, skybox, pixel)
             getShadedPixel(pixel, 0, [0, 0, 0], pixel)
         }

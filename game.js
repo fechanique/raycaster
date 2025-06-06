@@ -6,6 +6,9 @@ upKey = 'arrowup'
 downKey = 'arrowdown'
 wKey = 'w'
 sKey = 's'
+breath = 0
+head = 0
+steepTime = 0
 
 const events = new EventTarget()
 
@@ -37,7 +40,6 @@ function loop(elapsedTime){
     delta_v = vel*elapsedTime
     game.player.walk = false
 
-
     delta_x1 = 0
     delta_y1 = 0
     delta_x2 = 0
@@ -45,6 +47,7 @@ function loop(elapsedTime){
     delta_z = 0
     delta_h = 0
     delta_w = 0
+    delta_head = 0
 
     isAction = false
     if(game.keys['shift']){
@@ -91,18 +94,19 @@ function loop(elapsedTime){
         game.player.flying = true
     }
     if(game.keys[wKey]){
-        game.player.head += Math.round(vel*elapsedTime)
+        delta_head += Math.round(vel*elapsedTime)
     }
     if(game.keys[sKey]){
-        game.player.head -= Math.round(vel*elapsedTime)
+        delta_head -= Math.round(vel*elapsedTime)
     }
     if(game.keys['r']){
-        game.player.head = 0
+        head = 0
         game.player.z = game.player.floor
         game.player.flying = false
         game.player.toJump = false
     }
     if(game.keys['x'] && !game.player.toJump){
+        if(!game.player.toJump) audio.load('sounds/jump.mp3')
         game.player.toJump = true
         game.player.jumpTime = 0
         game.player.z0 = game.player.z
@@ -110,6 +114,7 @@ function loop(elapsedTime){
     }
     if(game.keys['c']){
         delta_h -= (vel*2*elapsedTime)
+        if(!game.player.couch) audio.load('sounds/crouch.mp3')
         game.player.couch = true
     }else{
         delta_h += (vel*2*elapsedTime)
@@ -177,12 +182,16 @@ function loop(elapsedTime){
     if(game.player.toJump){
         game.player.jumpTime += elapsedTime/1000
         game.player.z = ~~(game.player.z0 + game.player.f*(game.player.jumpTime) - (0.5 * 980 * game.player.jumpTime * game.player.jumpTime))
-        if(game.player.z < game.player.floor){
+        if(game.player.z <= game.player.floor){
             game.player.toJump = false
             game.player.flying = false
+            game.player.falling = false
             game.player.toUp = false
             game.player.f = 0
             game.player.z = game.player.floor
+            console.log('landed')
+            if(game.player.jumpTime > 0.5) audio.load('sounds/land.mp3')
+            else audio.load('sounds/footstep.mp3')
         }
         if(game.player.z+game.player.h+game.player.top >= game.player.ceil){
             game.player.z0 = game.player.z
@@ -209,7 +218,7 @@ function loop(elapsedTime){
         game.player.h = 70
     }
 
-    if(game.player.z+delta_z+game.player.h+delta_h+game.player.top >= game.player.ceil){
+    if(game.player.z+delta_z+game.player.h+delta_h+game.player.top > game.player.ceil){
         console.log('ceil hit')
         if(delta_z > 0) delta_z = 0
         if(delta_h > 0) delta_h = 0
@@ -384,6 +393,20 @@ function loop(elapsedTime){
     }
     game.player.x = Math.round(game.player.x)
     game.player.y = Math.round(game.player.y)
+    head += delta_head 
+
+    if(game.player.walk && !game.player.flying){
+        breath = Math.sin(Date.now()*vel/50)*2
+    }else{
+        breath = Math.sin(Date.now()/2000)*2
+    }
+    game.player.head = Math.round((head+breath)*1000)/1000
+
+    steepTime += elapsedTime
+    if(steepTime > (150+Math.random()*100)/vel && !game.player.flying && !game.player.toJump && game.player.walk){
+        audio.load('sounds/footstep.mp3')
+        steepTime = 0
+    }
 
     if(game.opt.save) localStorage.setItem("player", JSON.stringify(game.player))
     events.dispatchEvent(new CustomEvent('player', {} ))

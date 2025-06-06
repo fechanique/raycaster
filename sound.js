@@ -15,7 +15,7 @@ class Audio{
 
         for(let sound of sounds){
             if(!sound.playing){
-                sound.source = await audio.load(sound.src, sound.x, sound.y, sound.z, sound.dist, sound.loop, sound.ambience)
+                sound.source = await audio.load(sound.src, sound.x, sound.y, sound.z, sound.dist, sound.loop, sound.ambience, sound.gain)
                 sound.playing = true
             }
         }
@@ -81,7 +81,7 @@ class Audio{
 
 sounds = [
     //{id:'elevator', x:-800, y:600, z:0, dist:500, src:'sounds/machine2.mp3', playing:false, loop:true},
-    //{id:'ambience', x:-800, y:600, z:0, dist:500, src:'sounds/ambience.mp3', playing:false, loop:true, ambience:true},
+    {id:'ambience', x:-800, y:600, z:0, dist:500, src:'sounds/ambient.mp3', playing:false, loop:true, ambience:true, gain:0.05},
 ]
 
 audio = new Audio()
