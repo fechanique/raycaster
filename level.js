@@ -72,7 +72,7 @@ level = [
         ceil: ['glass.jpg', -0.5, -0.5, 0, 1, 1, 0, 0], 
         floor: ['glass.jpg', -1, -0.3, 0, 0.5, 0.5, 0, 0],
         x:0, y:0, r:0,
-        alpha:true, alphaValue:200,
+        alpha:true, alphaValue:150,
         animate:'water',
     },
     //FACHADA
