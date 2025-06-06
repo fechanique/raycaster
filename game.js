@@ -444,7 +444,7 @@ function setMouse(){
     document.addEventListener('mousemove', function(e) {
         // e.movementX y e.movementY son los desplazamientos desde el último evento
         game.player.r -= e.movementX * 0.2;   // Gira izquierda/derecha (yaw)
-        game.player.head -= e.movementY; // Sube/baja la cabeza (pitch)
+        head -= e.movementY; // Sube/baja la cabeza (pitch)
     });
 }
 

@@ -10,8 +10,6 @@ game = {
     uiImages : uiImages,
     stats: {lives:3, bullets:10, kills:0, deaths:0}
 }
-game.cam.num_rays = (game.opt.width/game.opt.res)
-game.cam.plane_dist = (game.opt.width / 2) / Math.tan((game.cam.fov * Math.PI / 180) / 2)
 
 savedPlayer = JSON.parse(localStorage.getItem("player"))
 if(savedPlayer) game.player = savedPlayer
@@ -20,13 +18,19 @@ function deletePlayerData(){
     localStorage.removeItem("player")
 }
 
-for(let index=0 ; index<game.cam.num_rays ; index++){
-    let deg = index*game.cam.fov/game.cam.num_rays - game.cam.fov/2
-    game.rays.push({
-        i: index, deg:deg, coll: [], cos:+Math.cos((deg)/180*Math.PI), sin:+Math.sin((deg)/180*Math.PI), 
-        screenX0: Math.round(index*game.opt.res), screenX1: Math.round(Math.min((index*game.opt.res)+game.opt.res, game.opt.width))
-    })
+function initFov(){
+    game.cam.num_rays = (game.opt.width/game.opt.res)
+    game.cam.plane_dist = (game.opt.width / 2) / Math.tan((game.cam.fov * Math.PI / 180) / 2)
+
+    for(let index=0 ; index<game.cam.num_rays ; index++){
+        let deg = index*game.cam.fov/game.cam.num_rays - game.cam.fov/2
+        game.rays.push({
+            i: index, deg:deg, coll: [], cos:+Math.cos((deg)/180*Math.PI), sin:+Math.sin((deg)/180*Math.PI), 
+            screenX0: Math.round(index*game.opt.res), screenX1: Math.round(Math.min((index*game.opt.res)+game.opt.res, game.opt.width))
+        })
+    }
 }
+initFov()
 
 mapCanvas = document.createElement('canvas')
 mapCanvas.id = 'map'
@@ -90,7 +94,7 @@ MATH_PI_180 = Math.PI/180
 function drawGame(){
 
     for(let ray of game.rays){
-        z_buffer.fill(Infinity)
+        for(let i=0 ; i<game.opt.height ; i++) z_buffer[i] = Infinity
         ray_cos = ray.cos
         ray_sin = ray.sin
 
