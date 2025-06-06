@@ -85,7 +85,7 @@ function frame(time) {
 }
 
 pixel = new Uint8Array(4)
-z_buffer = new Float32Array(game.opt.height)
+z_buffer = new Float64Array(game.opt.height)
 MATH_PI_180 = Math.PI/180
 function drawGame(){
 
