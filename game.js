@@ -14,6 +14,7 @@ const events = new EventTarget()
 
 let angle2 = Math.PI/2
 function start(){
+    head = game.player.head
     for(var sector of game.level){
         for(let i=0 ; i<sector.points.length ; i++){
             let j = (i+1)%sector.points.length
