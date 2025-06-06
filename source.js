@@ -350,6 +350,7 @@ function drawMap(){
     mapCtx.save()
     mapCtx.translate(-game.player.x+mapCanvas.width/2, -game.player.y+mapCanvas.height/2)
 
+    mapCtx.fillStyle = "black"
     for(let elem of game.level){
         mapCtx.beginPath()
         for(let path of elem.points){
