@@ -88,6 +88,12 @@ function candle(sector){
     else sector.candle = true
 }
 
+function water(sector, elapsedTime){
+    sector.floor[6] += 0.01*elapsedTime
+    sector.floor[7] += 0.001*elapsedTime
+    sector.r -= 0.001*elapsedTime
+}
+
 function light(sector){
     if(sector.light){
         sector.light = false
