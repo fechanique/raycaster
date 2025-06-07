@@ -198,7 +198,7 @@ function loop(elapsedTime){
             game.player.f = 0
         }
     }
-    if(game.player.falling & !game.player.toJump && !game.player.toUp && !game.player.flying){
+    if(game.player.z > game.player.floor & !game.player.toJump && !game.player.toUp && !game.player.flying){
         game.player.toJump = true
         game.player.jumpTime = 0
         game.player.z0 = game.player.z
@@ -295,7 +295,7 @@ function loop(elapsedTime){
             }
 
             let segmentDist = distancePointToSegment(game.player.x+new_x, game.player.y+new_y, sector.points[i][0], sector.points[i][1], sector.points[j][0], sector.points[j][1])
-            if(segmentDist.dist <= game.player.rad && isWallInFront(game.player, wall[0], wall[1]) &&(
+            if(!sector.clip &&segmentDist.dist <= game.player.rad && isWallInFront(game.player, wall[0], wall[1]) &&(
                 game.player.z < sector.z1-game.player.bot && game.player.z+game.player.h+game.player.top > sector.z0)
                 )
             {
@@ -329,14 +329,13 @@ function loop(elapsedTime){
         //sectorInFront.floor[1] += 0.5 ; sectorInFront.floor[2] -= 0.5 ; sectorInFront.floor[3] -= 0.5
     }
 
-    let sectorFloor = game.level.filter(e=>e.inSector && e.z1 <= game.player.z).sort((a, b) => b.z1 - a.z1) [0]
+    let sectorFloor = game.level.filter(e=>e.inSector && !e.clip && e.z1 <= game.player.z).sort((a, b) => b.z1 - a.z1) [0]
     if(sectorFloor){
         game.player.floor = sectorFloor.z1
         if(sectorFloor.z1 === game.player.z) sectorFloor.inFloor = true
     }
-    game.player.nextFloor = game.level.filter(e=>e.inSector && e.z1 > game.player.z).sort((a, b) => a.z1 - b.z1) [0]?.z1
-    game.player.ceil = game.level.filter(e=>e.inSector && e.z0 >= game.player.z+game.player.h).sort((a, b) => a.z0 - b.z0) [0]?.z0
-    game.player.falling = game.player.z > game.player.floor
+    game.player.nextFloor = game.level.filter(e=>e.inSector && !e.clip && e.z1 > game.player.z).sort((a, b) => a.z1 - b.z1) [0]?.z1
+    game.player.ceil = game.level.filter(e=>e.inSector && !e.clip && e.z0 >= game.player.z+game.player.h).sort((a, b) => a.z0 - b.z0) [0]?.z0
     game.player.toUp = game.player.nextFloor-game.player.z <= game.player.bot
 
 
@@ -398,7 +397,7 @@ function loop(elapsedTime){
     if(game.player.walk && !game.player.flying){
         breath = Math.sin(Date.now()*vel/50)*2
     }else{
-        breath = Math.sin(Date.now()/2000)*2
+        //breath = Math.sin(Date.now()/2000)*2
     }
     game.player.head = Math.round((head+breath)*1000)/1000
 

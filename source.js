@@ -153,43 +153,23 @@ function drawGame(){
 
         //DRAW WALLS
         for(let coll of ray.coll){
-            if(!coll.isNextColl && !coll.alpha) drawWall(coll, false)
-        }
-
-        //DRAW CEILS
-        ray.coll.sort((a, b) => a.z0 - b.z0)
-        for(let coll of ray.coll){
-            if((coll.z0 > game.player.z+game.player.h)  && !coll.alpha) drawPlane(coll, coll.z0, coll.ceil, false)
-        }
-
-        //DRAW FLOORS
-        ray.coll.sort((a, b) => b.z1 - a.z1)
-        for(let coll of ray.coll){
-            if(!(coll.z1 > game.player.z+game.player.h) && !coll.alpha) drawPlane(coll, coll.z1, coll.floor, false)
+            if(!coll.alpha){
+                if(!coll.isNextColl && coll.dist >0) drawWall(coll, false)
+                if((coll.z0 > game.player.z+game.player.h)) drawPlane(coll, coll.z0, coll.ceil, false)
+                if(!(coll.z1 > game.player.z+game.player.h)) drawPlane(coll, coll.z1, coll.floor, false)
+            }
         }
 
         drawSky()
 
-        //DRAW ALPHA CEILS
-        for(let coll of ray.coll){
-            if((coll.z0 > game.player.z+game.player.h)  && coll.alpha) drawPlane(coll, coll.z0, coll.ceil, true)
-        }
-        //DRAW FLOORS
-        for(let coll of ray.coll){
-            if(!(coll.z1 > game.player.z+game.player.h) && coll.alpha) drawPlane(coll, coll.z1, coll.floor, true)
-        }
-        //DRAW ALPHA WALLS
         ray.coll.sort((a, b) => b.dist - a.dist)
+        //DRAW ALPHA WALLS
         for(let coll of ray.coll){
-            if(coll.alpha) drawWall(coll, true)
-        }
-        //DRAW ALPHA FLOORS
-        for(let coll of ray.coll){
-            if(!(coll.z1 > game.player.z+game.player.h) && coll.alpha) drawPlane(coll, coll.z1, coll.floor, true)
-        }
-        //DRAW CEILS
-        for(let coll of ray.coll){
-            if((coll.z0 > game.player.z+game.player.h)  && coll.alpha) drawPlane(coll, coll.z0, coll.ceil, true)
+            if(coll.alpha){
+                if(coll.dist >0) drawWall(coll, true)
+                drawPlane(coll, coll.z0, coll.ceil, true)
+                drawPlane(coll, coll.z1, coll.floor, true)
+            }
         }
         
     }
