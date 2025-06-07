@@ -114,8 +114,8 @@ function drawGame(){
         for(let sectorIndex=0; sectorIndex<game.level.length ; sectorIndex++){
             let sector = game.level[sectorIndex]
             sector.id = sectorIndex
-            if(pointInSector(ray.x0, ray.y0, sector.points)) ray.coll.push({id:sectorIndex+':-1', dist: 0, sector: sector, face:0, points:sector.points[0]})
-            if(pointInSector(ray.x1, ray.y1, sector.points)) ray.coll.push({id:sectorIndex+':-2', dist: game.cam.visibility, sector: sector, face:0, points:sector.points[0]})
+            if(pointInSector(ray.x0, ray.y0, sector.points)) ray.coll.push({id:sectorIndex+':-1', dist: 0, z0:sector.z0, z1:sector.z1, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, sector: sectorIndex, floor:sector.floor, ceil:sector.ceil, face:0, points:sector.points[0]})
+            if(pointInSector(ray.x1, ray.y1, sector.points)) ray.coll.push({id:sectorIndex+':-2', dist: game.cam.visibility, z0:sector.z0, z1:sector.z1, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, sector:sector.id, floor:sector.floor, ceil:sector.ceil, face:0, points:sector.points[0]})
             for(let i=0 ; i<sector.points.length ; i++){
                 let j = (i+1)%sector.points.length
                 let sx1 = sector.points[i][0]
@@ -129,7 +129,7 @@ function drawGame(){
                     let face_dist = calcDistance(sector.points[i][0], sector.points[i][1], temp_int.intersectX, temp_int.intersectY)
                     //real_dist = Math.sqrt(temp_dist**2 + (game.player.jump-sector.z0)**2)
                     //if(ray.coll.filter(e=>e.dist == temp_dist && e.sector.id == sectorIndex).length == 0){ //evitar caras juntas y esquinas. Esto es eficiente?
-                        ray.coll.push({id:sectorIndex+':'+i, dist: temp_dist, sector: sector, face:face_dist, points:sector.points[i], pos:temp_int})
+                        ray.coll.push({id:sectorIndex+':'+i, dist: temp_dist, z0:sector.z0, z1:sector.z1, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, floor:sector.floor, ceil:sector.ceil, sector: sectorIndex, face:face_dist, points:sector.points[i], pos:temp_int})
                     //}
 
                 }
@@ -138,65 +138,57 @@ function drawGame(){
         ray.coll.sort((a, b) => a.dist - b.dist)
 
         //CALCULATE FLOORS
-        ray.planes = []
         for(let coll of ray.coll){
-            let nextColls = ray.coll.filter((e) => e.dist >= coll.dist && coll.sector.id == e.sector.id && coll.id != e.id && !e.processed)
+            let nextColls = ray.coll.filter((e) => e.dist >= coll.dist && coll.sector == e.sector && coll.id != e.id && !e.processed)
             if(nextColls.length % 2 == 0){
                 coll.isNextColl = true
             }else{
                 let nextColl = nextColls[0]
-                ray.planes.push({p0:coll.dist, p1:nextColl.dist, z:coll.sector.z1, isOver:coll.sector.z1 > game.player.z+game.player.h, coll:coll, nextColl:nextColl, isFloor:true})
-                ray.planes.push({p0:coll.dist, p1:nextColl.dist, z:coll.sector.z0, isOver:coll.sector.z0 > game.player.z+game.player.h, coll:coll, nextColl:nextColl, isFloor:false})
+                coll.p0 = coll.dist
+                coll.p1 = nextColl.dist
             }
             coll.processed = true
         }
 
-        //CALCULATE WALLS
-        ray.walls = []
-        for(let coll of ray.coll){
-            ray.walls.push({z0:coll.sector.z0, z1:coll.sector.z1, dist:coll.dist, face:coll.face, coll:coll, isFront:!coll.isNextColl})
-        }
-
         //DRAW WALLS
-        ray.walls.sort((a, b) => a.dist - b.dist)
-        for(let wall of ray.walls){
-            if(wall.isFront && !wall.coll.sector.alpha) drawWall(wall, false)
+        for(let coll of ray.coll){
+            if(!coll.isNextColl && !coll.alpha) drawWall(coll, false)
         }
 
         //DRAW CEILS
-        ray.planes.sort((a, b) => a.z - b.z)
-        for(let plane of ray.planes){
-            if(plane.isFloor == false && plane.isOver && !plane.coll.sector.alpha) drawPlane(plane, false)
+        ray.coll.sort((a, b) => a.z0 - b.z0)
+        for(let coll of ray.coll){
+            if((coll.z0 > game.player.z+game.player.h)  && !coll.alpha) drawPlane(coll, coll.z0, coll.ceil, false)
         }
 
         //DRAW FLOORS
-        ray.planes.sort((a, b) => b.z - a.z)
-        for(let plane of ray.planes){
-            if(plane.isFloor == true && !plane.isOver && !plane.coll.sector.alpha) drawPlane(plane, false)
+        ray.coll.sort((a, b) => b.z1 - a.z1)
+        for(let coll of ray.coll){
+            if(!(coll.z1 > game.player.z+game.player.h) && !coll.alpha) drawPlane(coll, coll.z1, coll.floor, false)
         }
 
         drawSky()
 
         //DRAW ALPHA CEILS
-        for(let plane of ray.planes){
-            if(plane.isFloor == false && !plane.isOver && plane.coll.sector.alpha) drawPlane(plane, true)
+        for(let coll of ray.coll){
+            if((coll.z0 > game.player.z+game.player.h)  && coll.alpha) drawPlane(coll, coll.z0, coll.ceil, true)
         }
         //DRAW FLOORS
-        for(let plane of ray.planes){
-            if(plane.isFloor == true && plane.isOver && plane.coll.sector.alpha) drawPlane(plane, true)
+        for(let coll of ray.coll){
+            if(!(coll.z1 > game.player.z+game.player.h) && coll.alpha) drawPlane(coll, coll.z1, coll.floor, true)
         }
         //DRAW ALPHA WALLS
-        ray.walls.sort((a, b) => b.dist - a.dist)
-        for(let wall of ray.walls){
-            if(wall.coll.sector.alpha) drawWall(wall, true)
+        ray.coll.sort((a, b) => b.dist - a.dist)
+        for(let coll of ray.coll){
+            if(coll.alpha) drawWall(coll, true)
         }
         //DRAW ALPHA FLOORS
-        for(let plane of ray.planes){
-            if(plane.isFloor == true && !plane.isOver && plane.coll.sector.alpha) drawPlane(plane, true)
+        for(let coll of ray.coll){
+            if(!(coll.z1 > game.player.z+game.player.h) && coll.alpha) drawPlane(coll, coll.z1, coll.floor, true)
         }
         //DRAW CEILS
-        for(let plane of ray.planes){
-            if(plane.isFloor == false && plane.isOver && plane.coll.sector.alpha) drawPlane(plane, true)
+        for(let coll of ray.coll){
+            if((coll.z0 > game.player.z+game.player.h)  && coll.alpha) drawPlane(coll, coll.z0, coll.ceil, true)
         }
         
     }
@@ -209,8 +201,8 @@ function drawWall(wall, isAlpha){
     let y1 = Math.ceil(Math.min(((game.opt.height/2)-(bot_px)+game.player.head), game.opt.height))
 
     let image_y0 = ((game.opt.height/2)-(top_px)+game.player.head)
-    let image_x = (wall.face*wall.coll.points[6]+wall.coll.points[8])
-    let b = ((wall.z1-wall.coll.sector.z0)/(top_px-bot_px))*wall.coll.points[7]
+    let image_x = (wall.face*wall.points[6]+wall.points[8])
+    let b = ((wall.z1-wall.z0)/(top_px-bot_px))*wall.points[7]
 
     let start = true
     for(let y=y0; y<y1; y++){
@@ -220,10 +212,10 @@ function drawWall(wall, isAlpha){
         }
         if((y)%game.opt.res==0 || start){
             start = false
-            getPixel(Math.round(image_x), Math.round(((y-image_y0)*b)+wall.coll.points[9]), game.images[wall.coll.points[2]], pixel)
-            if(wall.coll.sector.alphaValue) pixel[3] = wall.coll.sector.alphaValue
+            getPixel(Math.round(image_x), Math.round(((y-image_y0)*b)+wall.points[9]), game.images[wall.points[2]], pixel)
+            if(wall.alphaValue) pixel[3] = wall.alphaValue
             if(pixel[3] == 0) continue
-            getShadedPixel(pixel, wall.dist, [wall.coll.points[3], wall.coll.points[4], wall.coll.points[5]], pixel)
+            getShadedPixel(pixel, wall.dist, [wall.points[3], wall.points[4], wall.points[5]], pixel)
             if(isAlpha && pixel[3] < 255){
                 let prevPixel = data[y*game.opt.width+x0]
                 mixRgbAlpha(pixel, [prevPixel & 0xFF, prevPixel >> 8 & 0xFF, prevPixel >> 16 & 0xFF, prevPixel >> 24 & 0xFF], pixel)
@@ -238,25 +230,24 @@ function drawWall(wall, isAlpha){
     }
 }
 
-function drawPlane(plane, isAlpha){
-    let top_px = ((plane.z-game.player.h-game.player.z)/(plane.p1*ray_cos))*game.cam.plane_dist
-    let bot_px = ((plane.z-game.player.h-game.player.z)/(plane.p0*ray_cos))*game.cam.plane_dist
+function drawPlane(plane, plane_z, planeImage, isAlpha){
+    let top_px = ((plane_z-game.player.h-game.player.z)/(plane.p1*ray_cos))*game.cam.plane_dist
+    let bot_px = ((plane_z-game.player.h-game.player.z)/(plane.p0*ray_cos))*game.cam.plane_dist
 
-    let plane_height = plane.z-game.player.h
+    let plane_height = plane_z-game.player.h
     let cons_1 = ((plane_height-game.player.z)*game.cam.plane_dist)/ray_cos
 
-    if(plane.isOver) [top_px, bot_px] = [bot_px, top_px]
+    if(bot_px>top_px) [top_px, bot_px] = [bot_px, top_px]
 
     let y0 = Math.ceil(Math.max(((game.opt.height/2)-(top_px)+game.player.head), 0))
     let y1 = Math.ceil(Math.min(((game.opt.height/2)-(bot_px)+game.player.head), game.opt.height))
     
     // Ángulo de rotación del plano (en radianes)
-    let rot = -plane.coll.sector.r * MATH_PI_180
+    let rot = -plane.r * MATH_PI_180
     let sin_rot = Math.sin(rot)
     let cos_rot = Math.cos(rot)
 
     let planeDist = null
-    let planeImage = plane.isFloor?plane.coll.sector.floor:plane.coll.sector.ceil
     let texture = game.images[planeImage[0]]
     for(let y=y0; y<y1; y++){
         if((y)%game.opt.res==0 || !planeDist){ //revisar lo de y-y0 porque genera artefactos
@@ -269,8 +260,8 @@ function drawPlane(plane, isAlpha){
             let image_y = (game.player.y - rot_ray_sin*planeDist)
 
             // Coordenadas en el mundo del punto a proyectar
-            let rel_x = image_x - plane.coll.sector.points[0][0];
-            let rel_y = image_y - plane.coll.sector.points[0][1];
+            let rel_x = image_x - plane.points[0];
+            let rel_y = image_y - plane.points[1];
             // Rotar el punto según el ángulo del sector
             let rot_rel_x = rel_x * cos_rot - rel_y * sin_rot
             let rot_rel_y = rel_x * sin_rot + rel_y * cos_rot
@@ -279,7 +270,7 @@ function drawPlane(plane, isAlpha){
             let texture_y = ~~((rot_rel_y + planeImage[7]) * planeImage[5]);
 
             getPixel(texture_x, texture_y, texture, pixel)
-            if(plane.coll.sector.alphaValue) pixel[3] = plane.coll.sector.alphaValue
+            if(plane.alphaValue) pixel[3] = plane.alphaValue
             if(pixel[3] == 0) continue
             getShadedPixel(pixel, planeDist, [planeImage[1], planeImage[2], planeImage[3]], pixel)
             if(isAlpha && pixel[3] < 255){
