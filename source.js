@@ -114,8 +114,9 @@ function drawGame(){
         for(let sectorIndex=0; sectorIndex<game.level.length ; sectorIndex++){
             let sector = game.level[sectorIndex]
             sector.id = sectorIndex
-            if(pointInSector(ray.x0, ray.y0, sector.points)) ray.coll.push({id:sectorIndex+':-1', dist: 0, z0:sector.z0, z1:sector.z1, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, sector: sectorIndex, floor:sector.floor, ceil:sector.ceil, face:0, points:sector.points[0]})
-            if(pointInSector(ray.x1, ray.y1, sector.points)) ray.coll.push({id:sectorIndex+':-2', dist: game.cam.visibility, z0:sector.z0, z1:sector.z1, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, sector:sector.id, floor:sector.floor, ceil:sector.ceil, face:0, points:sector.points[0]})
+            let collIndex = 0
+            if(pointInSector(ray.x0, ray.y0, sector.points)) ray.coll.push({id:sectorIndex+':-1', dist: 0, z0:sector.z0, z1:sector.z1, x:sector.x, y:sector.y, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, sector: sectorIndex, floor:sector.floor, ceil:sector.ceil, face:0, points:sector.points[0]})
+            if(pointInSector(ray.x1, ray.y1, sector.points)) ray.coll.push({id:sectorIndex+':-2', dist: game.cam.visibility, z0:sector.z0, z1:sector.z1, x:sector.x, y:sector.y, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, sector:sector.id, floor:sector.floor, ceil:sector.ceil, face:0, points:sector.points[0]})
             for(let i=0 ; i<sector.points.length ; i++){
                 let j = (i+1)%sector.points.length
                 let sx1 = sector.points[i][0]
@@ -129,7 +130,7 @@ function drawGame(){
                     let face_dist = calcDistance(sector.points[i][0], sector.points[i][1], temp_int.intersectX, temp_int.intersectY)
                     //real_dist = Math.sqrt(temp_dist**2 + (game.player.jump-sector.z0)**2)
                     //if(ray.coll.filter(e=>e.dist == temp_dist && e.sector.id == sectorIndex).length == 0){ //evitar caras juntas y esquinas. Esto es eficiente?
-                        ray.coll.push({id:sectorIndex+':'+i, dist: temp_dist, z0:sector.z0, z1:sector.z1, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, floor:sector.floor, ceil:sector.ceil, sector: sectorIndex, face:face_dist, points:sector.points[i], pos:temp_int})
+                        ray.coll.push({id:sectorIndex+':'+i, dist: temp_dist, z0:sector.z0, z1:sector.z1, x:sector.x, y:sector.y, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, floor:sector.floor, ceil:sector.ceil, sector: sectorIndex, face:face_dist, points:sector.points[i], pos:temp_int})
                     //}
 
                 }
@@ -260,8 +261,8 @@ function drawPlane(plane, plane_z, planeImage, isAlpha){
             let image_y = (game.player.y - rot_ray_sin*planeDist)
 
             // Coordenadas en el mundo del punto a proyectar
-            let rel_x = image_x - plane.points[0];
-            let rel_y = image_y - plane.points[1];
+            let rel_x = image_x - plane.x
+            let rel_y = image_y - plane.y
             // Rotar el punto según el ángulo del sector
             let rot_rel_x = rel_x * cos_rot - rel_y * sin_rot
             let rot_rel_y = rel_x * sin_rot + rel_y * cos_rot
