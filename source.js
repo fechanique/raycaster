@@ -14,12 +14,13 @@ game = {
 if(game.opt.release){
     game.opt.logs = false
     game.opt.map = false
+    game.opt.save = false
     game.opt.width = 740
     game.cam.fov = 70
     game.opt.res = 2
 }
 
-if(game.opt.save && game.opt.release){
+if(game.opt.save){
     savedPlayer = JSON.parse(localStorage.getItem("player"))
     if(savedPlayer) game.player = savedPlayer
 }
