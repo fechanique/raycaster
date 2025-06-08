@@ -1,0 +1,3 @@
+function lights(elapsedTime){
+    
+}

@@ -167,7 +167,7 @@ function playerHit(enemyId){
         let coords = getSpawnCoords()
         game.player.x = coords[0]
         game.player.y = coords[1]
-        game.player.z = coords[2]
+        game.player.z = coords[2]+50
         events.dispatchEvent(new CustomEvent('playerDeath', { detail:{id:game.player.id, enemyId:enemyId} }))
     }
 }
