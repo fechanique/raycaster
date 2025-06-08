@@ -1,5 +1,5 @@
 game = {
-    opt: { width: 640, height: 480, res:2, logs:true, map:true, save:true },
+    opt: { width: 640, height: 480, res:2, logs:true, map:true, save:true, release:true },
     map : { width: 640, height: 480, zoom: 0.5 },
     player : { x: 2000, y: 2000, z: 50, h: 150, r: 135, head:0, falling:false, flying:false, clip:false, maxH:150, crossHair:true, rad:40, top:20, bot:60},
     cam : { fps: 30, fov: 60, plane_dist: 500, num_rays: null, visibility: 10000, lightDist: 5000, globalLight: [1, 1, 1] },
@@ -11,7 +11,15 @@ game = {
     stats: {lives:3, bullets:10, kills:0, deaths:0}
 }
 
-if(game.opt.save){
+if(game.opt.release){
+    game.opt.logs = false
+    game.opt.map = false
+    game.opt.width = 740
+    game.cam.fov = 70
+    game.opt.res = 2
+}
+
+if(game.opt.save && game.opt.release){
     savedPlayer = JSON.parse(localStorage.getItem("player"))
     if(savedPlayer) game.player = savedPlayer
 }
@@ -51,8 +59,11 @@ gameCtx.canvas.width = game.opt.width
 gameCtx.canvas.height = game.opt.height
 gameCtx.imageSmoothingEnabled = false
 gameCanvas.style.background = 'black'
-//gameCanvas.style.height = window.innerHeight + 'px'
-//gameCanvas.style.width = window.innerWidth + 'px'
+if(game.opt.release){
+    gameCanvas.style.height = window.innerHeight + 'px'
+    gameCanvas.style.width = window.innerWidth + 'px'
+    setMouse()
+}
 //setMouse()
 
 if(game.opt.logs) document.body.insertAdjacentHTML('beforeend', '<div id="logs"></div>')

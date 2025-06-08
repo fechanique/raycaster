@@ -168,8 +168,13 @@ function playerHit(enemyId){
         game.player.x = coords[0]
         game.player.y = coords[1]
         game.player.z = coords[2]+50
+        game.player.r = Math.floor(Math.random() * 360);
         events.dispatchEvent(new CustomEvent('playerDeath', { detail:{id:game.player.id, enemyId:enemyId} }))
     }
+    game.cam.globalLight = [1, 0.5, 0.5]
+    setTimeout(() => {
+        game.cam.globalLight = [1, 1, 1]
+    }, 100);
 }
 
 ////

@@ -411,11 +411,11 @@ function loop(elapsedTime){
     if(game.opt.save) localStorage.setItem("player", JSON.stringify(game.player))
     events.dispatchEvent(new CustomEvent('player', {} ))
 
-    //let ran = Math.random()
-    //if(ran < 0.001){
-    //    if(game.level.filter(e=>e.name=='heart').length < 3) spawnHeart()
-    //    if(game.level.filter(e=>e.name=='bullets').length < 3) spawnBullets()
-    //}
+    let ran = Math.random()
+    if(ran < 0.001){
+        if(game.level.filter(e=>e.name=='heart').length < 3) spawnHeart()
+        if(game.level.filter(e=>e.name=='bullets').length < 3) spawnBullets()
+    }
     
 
     log += JSON.stringify(game.player)+'<br/>'
@@ -443,7 +443,7 @@ function setMouse(){
     });
     document.addEventListener('mousemove', function(e) {
         // e.movementX y e.movementY son los desplazamientos desde el último evento
-        game.player.r -= e.movementX * 0.2;   // Gira izquierda/derecha (yaw)
+        rad -= e.movementX * 0.2;   // Gira izquierda/derecha (yaw)
         head -= e.movementY; // Sube/baja la cabeza (pitch)
     });
 }
