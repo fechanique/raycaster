@@ -8,6 +8,7 @@ wKey = 'w'
 sKey = 's'
 breath = 0
 head = 0
+rad = 0
 steepTime = 0
 
 const events = new EventTarget()
@@ -15,6 +16,7 @@ const events = new EventTarget()
 let angle2 = Math.PI/2
 function start(){
     head = game.player.head
+    rad = game.player.r
     for(var sector of game.level){
         for(let i=0 ; i<sector.points.length ; i++){
             let j = (i+1)%sector.points.length
@@ -66,13 +68,11 @@ function loop(elapsedTime){
         game.player.walk = true
     }
     if(game.keys['arrowleft']){
-        game.player.r += vel/4*elapsedTime
-        game.player.r = Math.floor(game.player.r%360)
+        rad += vel/4*elapsedTime
         game.player.walk = true
     }
     if(game.keys['arrowright']){
-        game.player.r -= vel/4*elapsedTime
-        game.player.r = Math.ceil(game.player.r%360)
+        rad-= vel/4*elapsedTime
         game.player.walk = true
     }
     if(game.keys['a']){
@@ -397,9 +397,10 @@ function loop(elapsedTime){
     if(game.player.walk && !game.player.flying){
         breath = Math.sin(Date.now()*vel/50)*2
     }else{
-        //breath = Math.sin(Date.now()/2000)*2
+        breath = Math.sin(Date.now()/1000)*2
     }
-    game.player.head = Math.round((head+breath)*1000)/1000
+    game.player.head = Math.round((head+breath)*100)/100
+    game.player.r = Math.round((rad+breath/4)*100)/100
 
     steepTime += elapsedTime
     if(steepTime > (150+Math.random()*100)/vel && !game.player.flying && !game.player.toJump && game.player.walk){

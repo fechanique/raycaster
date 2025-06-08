@@ -430,6 +430,22 @@ level = [
         //action: 'activateElevator',
         x:0, y:0, z:0, r:0
     },
+    {
+        name:'cub',
+        points : [
+            [1500, 1500, 'wood.jpg', 0, 0, 0, 1, 1, 0, 0],
+            [1900, 1500, 'wood.jpg', 0, 0, 0, 1, 1, 0, 0],
+            [1900, 1900, 'wood.jpg', 0, 0, 0, 1, 1, 0, 0],
+            [1500, 1900, 'wood.jpg', 0, 0, 0, 1, 1, 0, 0],
+        ],
+        z0 : -100, z1 : 20,
+        ceil: ['ceiling.png', 0, 0, 0, 1, 1, 0, 0], 
+        floor: ['floor.jpg', 0, 0, 0, 1, 1, 0, 0],
+        animate: null, state:2,
+        //action: 'activateElevator',
+        x:0, y:0, z:0, r:0,
+        inverted:true
+    },
 ]
 
 for(let i=0;i<14;i++){
@@ -452,7 +468,7 @@ for(let i=0;i<14;i++){
 uiImages = [
     {
         src:'gun.png',
-        originX: 0.55, originY: 1,
+        originX: 0.5, originY: 1,
         factorX:0.5, factorY:0.5,
         toX:180, toY:-180,
         despX:0, despY:0,
