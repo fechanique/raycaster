@@ -397,7 +397,7 @@ function loop(elapsedTime){
     if(game.player.walk && !game.player.flying){
         breath = Math.sin(Date.now()*vel/50)*2
     }else{
-        breath = Math.sin(Date.now()/1000)*2
+        //breath = Math.sin(Date.now()/1000)*2
     }
     game.player.head = Math.round((head+breath)*100)/100
     game.player.r = Math.round((rad+breath/4)*100)/100

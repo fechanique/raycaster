@@ -48,7 +48,7 @@ gameCtx = gameCanvas.getContext('2d', { alpha: false })
 gameCtx.canvas.width = game.opt.width
 gameCtx.canvas.height = game.opt.height
 gameCtx.imageSmoothingEnabled = false
-//gameCanvas.style.background = 'black'
+gameCanvas.style.background = 'black'
 //gameCanvas.style.height = window.innerHeight + 'px'
 //gameCanvas.style.width = window.innerWidth + 'px'
 //setMouse()
@@ -114,7 +114,6 @@ function drawGame(){
         for(let sectorIndex=0; sectorIndex<game.level.length ; sectorIndex++){
             let sector = game.level[sectorIndex]
             sector.id = sectorIndex
-            let collIndex = 0
             if(pointInSector(ray.x0, ray.y0, sector.points)) ray.coll.push({id:sectorIndex+':-1', dist: 0, z0:sector.z0, z1:sector.z1, x:sector.x, y:sector.y, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, sector: sectorIndex, floor:sector.floor, ceil:sector.ceil, face:0, points:sector.points[0]})
             if(pointInSector(ray.x1, ray.y1, sector.points)) ray.coll.push({id:sectorIndex+':-2', dist: game.cam.visibility, z0:sector.z0, z1:sector.z1, x:sector.x, y:sector.y, r:sector.r, alpha:sector.alpha, alphaValue:sector.alphaValue, sector:sector.id, floor:sector.floor, ceil:sector.ceil, face:0, points:sector.points[0]})
             for(let i=0 ; i<sector.points.length ; i++){
@@ -195,7 +194,6 @@ function drawWall(wall, isAlpha){
             start = false
             getPixel(Math.round(image_x), Math.round(((y-image_y0)*b)+wall.points[9]), game.images[wall.points[2]], pixel)
             if(wall.alphaValue) pixel[3] = wall.alphaValue
-            if(pixel[3] == 0) continue
             getShadedPixel(pixel, wall.dist, [wall.points[3], wall.points[4], wall.points[5]], pixel)
             if(isAlpha && pixel[3] < 255){
                 let prevPixel = data[y*game.opt.width+x0]
@@ -203,7 +201,7 @@ function drawWall(wall, isAlpha){
             }
         }
         if(pixel[3] == 0) continue
-        if(!isAlpha) z_buffer[y] = wall.dist
+        z_buffer[y] = wall.dist
         let k = y*game.opt.width
         for(let x=x0; x<x1; x++){
             data[k+x] = rgbaToPixel(pixel)
@@ -231,7 +229,7 @@ function drawPlane(plane, plane_z, planeImage, isAlpha){
     let planeDist = null
     let texture = game.images[planeImage[0]]
     for(let y=y0; y<y1; y++){
-        if((y)%game.opt.res==0 || !planeDist){ //revisar lo de y-y0 porque genera artefactos
+        if((y)%game.opt.res==0 || !planeDist){
             planeDist = Math.abs(cons_1/(y-game.opt.height/2-game.player.head))
             if(planeDist > z_buffer[y]){
                 planeDist = null
@@ -252,7 +250,6 @@ function drawPlane(plane, plane_z, planeImage, isAlpha){
 
             getPixel(texture_x, texture_y, texture, pixel)
             if(plane.alphaValue) pixel[3] = plane.alphaValue
-            if(pixel[3] == 0) continue
             getShadedPixel(pixel, planeDist, [planeImage[1], planeImage[2], planeImage[3]], pixel)
             if(isAlpha && pixel[3] < 255){
                 let prevPixel = data[y*game.opt.width+x0]
@@ -260,7 +257,7 @@ function drawPlane(plane, plane_z, planeImage, isAlpha){
             }
         }
         if(pixel[3] == 0) continue
-        if(!isAlpha) z_buffer[y] = planeDist
+        z_buffer[y] = planeDist
         let k = y*game.opt.width
         for(let x=x0; x<x1; x++){
             data[k+x] = rgbaToPixel(pixel)
@@ -269,12 +266,7 @@ function drawPlane(plane, plane_z, planeImage, isAlpha){
 }
 
 function drawSky(){
-    let skybox = game.images['skybox.jpg']
-    skybox.texture_h = 3
-    let skybox_height = (skybox.height / game.opt.height) / skybox.texture_h
-    let skybox_height2 = ((game.opt.height/2)*(skybox.texture_h-1))
-    let w = (game.opt.width*(360/(game.cam.fov))/skybox.width)
-    let image_x = ((x0/w) - skybox.width*game.player.r/360)
+    let image_x = ((x0/skybox.w) - skybox.width*game.player.r/360)
 
     let start = true
     for (let y = 0; y < game.opt.height; y++) {
@@ -284,7 +276,7 @@ function drawSky(){
         }
         if((y)%game.opt.res==0 || start){
             start = false
-            let image_y = ((y + skybox_height2 - game.player.head/1.2)*skybox_height)
+            let image_y = ((y + skybox.const2 - game.player.head/1.2)*skybox.const1)
             getPixel(~~image_x, ~~image_y, skybox, pixel)
             getShadedPixel(pixel, 0, [0, 0, 0], pixel)
         }
@@ -363,7 +355,10 @@ function drawMap(){
     mapCtx.save()
 }
 
-requestAnimationFrame(frame)
+loadImages()
+events.addEventListener('loaded-images', (e) => {
+    requestAnimationFrame(frame)
+})
 
 function getPixel(x, y, texture, out) {
     //out[0]=255; out[1]=255; out[2]=255; out[3]=255;
