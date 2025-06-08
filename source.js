@@ -1,5 +1,5 @@
 game = {
-    opt: { width: 640, height: 480, res:2, logs:true, map:true, save:true, release:false },
+    opt: { width: 640, height: 480, res:2, logs:true, map:true, save:true, release:true },
     map : { width: 640, height: 480, zoom: 0.5 },
     player : { x: 2000, y: 2000, z: 50, h: 150, r: 135, head:0, falling:false, flying:false, clip:false, maxH:150, crossHair:true, rad:40, top:20, bot:60},
     cam : { fps: 30, fov: 60, plane_dist: 500, num_rays: null, visibility: 10000, lightDist: 5000, globalLight: [1, 1, 1] },
